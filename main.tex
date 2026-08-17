@@ -1,0 +1,118 @@
+\documentclass[11pt]{article}
+
+\title{Agentic search of malaria transmission models}
+\date{}
+\author{Giovanni Charles \and Pete Winskill \and Thomas Churcher}
+
+\usepackage{natbib}
+\usepackage{amsmath}
+
+\begin{document}
+\maketitle
+
+\abstract{Modellers of Malaria transmission often encounter structural modelling issues such as misspecification, where the model is not consistent with the true data generating process, and non-identifiability, where a parameter cannot be determined from observational data. Structural modelling issues are challenging to resolve given the vast space of admissible transmission models and non-unique resolutions. Navigating the landscape of admissible models requires a careful combination of prior knowledge and Bayesian model diagnostics. We propose an harness for proposing and evaluating likely malaria transmission models and an empirical analysis of the resulting landscape.}
+
+\section{Introduction}
+
+\subsection{Malaria transmission modelling}
+
+% The complexity, immunity, drugs, vectors
+Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multiphase lifecycle of the Plasmodium parasite and its interaction with different parts of the human immune system, varying influence of interventions, and the non-linear effects of vector carrying capacity on malaria burden.
+
+% The data: prevalence, incidence, EIR
+Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data:
+
+% TODO: Sanitise from thesis
+\begin{description}
+    \item[Clinical Malaria Incidence] This is the number of clinical malaria episodes within a specific time frame. An episode is typically defined as a new patient with a fever coupled with a positive diagnostic test. Incidence can be determined through active or passive case detection methods. Active case detection involves routinely monitoring a pre-enrolled cohort over the time frame, allowing for an accurate representation of malaria incidence by capturing cases as they occur. In contrast, passive case detection uses existing healthcare systems to identify incoming patients and their contact networks, which, although practical, is known to underestimate the true incidence of malaria due to reliance on symptomatic individuals seeking treatment \citet{rios-zertuche_performance_2021}.
+    \item[Parasite Prevalence]
+    Representing the proportion of the population infected with malaria at any given time, parasite prevalence is determined through cross-sectional surveys. This measure includes asymptomatic infections, offering a broader perspective on the infection's spread. However, the prevalence is influenced by the diagnostic methods used, with  RDTs and microscopy detecting fewer low density infections compared to PCR testing. 
+    \item[Entomological Inoculation Rate]
+    EIR estimates the average number of infectious mosquito bites received by a person per year. This rate is subject to considerable variability, influenced by the methods used for mosquito capture and the estimation of the sporozoite rate, as not all mosquito bites result in transmission. The EIR's variability is further compounded by environmental heterogeneity and seasonal factors, such as rainfall and temperature, which affect mosquito breeding and survival rates.
+\end{description}
+
+All of these metrics are heavily influenced by the vectorial capacity, the rate of contact between infectious mosquitoes and susceptible humans. However, a myriad of confounding factors, such as demographics, seasonality, human habitats, land use, diagnostic methods and wider malaria controls can obscure their precise relationship. Understanding these relationships are essential for predicting and mitigating malaria burden, and so have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
+
+\paragraph{Griffin et al's transmission model} Human transmission is disaggregated into age and heterogeneity compartments. The average age and heterogeneity of biting rates. The force of infection for each compartment is influenced by the age group - with adults experiencing more bites - and heterogeneity group. Immunity levels is accrued on each exposure to malaria. Immunity types are divided into pre-erythrocytic, acquired clinical immunity, maternal clinical immunity and immunity to detection by microscopy. The probability of clinical, asymptomatic and subpatent infection for each compartment is derived from latent force of infection and immunity levels. Taken at equilibrium, this transmission offers a closed-form solution for incidence and prevalence across age compartments for a given Entomological Inoculation Rate (EIR). The full model is presented in the Appendix \ref{section:equilibrium}
+
+\subsection{Agentic model discovery}
+
+Large Language Models (LLMs) have increasingly been applied to scientific model discovery. Since models can be expressed in code, and LLMs excel in code generation \citep{}, it follows that LLMs should be able to generate scientific models. In the field of Symbolic Regression, where the goal is to find expressions which regress to data, \citep{shojaee_llmsr} have shown that a program search can propose accurate expressions in Biology and Physics problems more efficiently than the previous state of the art - evolutionary search, even on tasks which do not appear in the LLMs training data.
+
+Since, there have been extensions which apply program search to discover probabilistic models. This is more challenging than symbolic regression, as evaluation is more computationally expensive and distributional metrics are more complex to reason about simple residuals. BoxLM \citep{li_icml_2024} proposed a process where an LLM synthesises a program and subsequently critiques it according to the Bayesian Workflow \citep{goodman}. G-Sim \citep{holt} and ModelSMC \cite{wahl} instead incorporated the SBI framework to allow models without tractable likelihoods, with ModelSMC in particular casting search as principled sample from the space of models given observation data.
+
+There has been limited research on search parameterisation and the choice of algorithm, leaving it to trail and error. The most popular algorithm is the "Islands model", where proposed models are divided into islands for resampling in order to maintain diversity, which is adopted by FunSearch, AlphaEvolve, LLM-SR, ShinkaEvolve \citep{}. MAP-Elites is an extension where the search space is structured into a grid such that diversity can be controlled across its axes, this is increasingly incorporated in LLM-driven Symbolic Regression methods \citep{}. Despite these advances in search algorithms, some would argue that Independant Identically Distributed (I.I.D) samples (or Best of N if one is interested in a single model) from the LLM remain competitive \citep{}. The algorithms for program search are sensitive to the task and search parameters, with frameworks leaving many options to the user including: model size, number of agents, prompt, diagnostics, starting model, etc. We focus on IID sampling in this work as it remains the simplest search algorithm and is less likely to confound our investigations into the influence of search parameterisations.
+
+No LLM driven program search has been applied to malaria transmission modelling at the time of writing. It remains to be seen if LLMs can propose competitive models in a reasonable compute budget and if so, what the proposed models can tell us about the landscape of highly predictive, mechanistic models.
+
+\subsection{Contributions}
+
+\paragraph{We establish a baseline for a malaria transmission model.} We recreate the malaria modelling study published by \citet{griffin}. We identify and remediate some shortcomings in the methodology, and define evaluation criteria for future modelling efforts. The code for the model is published at \citep{dmeq}, and the fitting and diagnostics are published at \citep{msinf}
+
+\paragraph{We compare various search parameterisations for IID LLM proposals.} We investigate the effects of LLM model size, starting model, modelling scope, and incorporating tool calling into model proposition. The resulting model proposals are evaluated against common Bayesian modelling and MCMC sampling statistics to estimate the influence of different search design decisions. The harness for IID search is published at \citep{discovery}.
+
+\paragraph{We provide an analysis of motifs which influence malaria transmission model performance.} We use the proposed models from the previous contribution to infer structural insights into malaria transmission modelling choices which could lead to more predictive and identifiable models.
+
+\section{Methods}
+
+% MCMC (RWMH, SA, NUTS)
+
+% Evaluation and diagnostics (our own)
+% - MCMC metrics
+% - Predictive metrics In distribution / OOD (LOSO-PSIS)
+
+% LLM, Agents, Search harnesses
+
+\section{Analysis of the baseline model fit}
+
+Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin}. We found that differentiable MCMC produced more reliable estimates which alter the previous posterior, gaps in predictive performance are a result of mis-specification rather than mis-sampling, and incorporating realistic demographics and observational data at higher ages futher update the posterior.
+
+\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin} with poor convergence diagnostics ($\hat{r}$=..., ESS=...), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics ($\hat{r}$=..., ESS=...) - see \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS posterior exhibited a larger marginal likelihood (... vs ...), confirming the reliability of the sample.
+
+\paragraph{Posterior predictive.} The NUTS posterior exhibited worse predictive performance than SA, Expected Log Probability Density (ELPD) ... < ..., despite better convergence statistics. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
+
+\paragraph{Realistic demographics and adult data} ...
+
+\section{Comparison of model search parameters}
+
+After establishing our baseline and evaluation metrics, we conducted various searches to see how it could be improved.
+
+\paragraph{Search aperture}
+% whole model x immunity only
+
+T
+
+\paragraph{Model correction}
+
+% from (scratch x correction) 
+
+% TODO:
+% increasing model size
+% increasing proposal samples
+% traditional vs agentic model proposals
+
+\section{An analysis of the model landscape}
+
+% curvature of model likelihood
+
+% qualitative analysis of structural motifs
+
+% sensitivity of model likelihood to structural motifs
+
+\section{Discussion}
+
+\section{Future work}
+
+% Other malaria models
+
+% More data (higher ages, information extraction)
+
+% Seasonality
+
+% Compare to sophisticated search algorithms
+
+\bibliography{bib}
+
+\end{document}
+
+
