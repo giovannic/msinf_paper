@@ -6,6 +6,7 @@
 
 \usepackage{natbib}
 \usepackage{amsmath}
+\usepackage{booktabs}
 
 \begin{document}
 \maketitle
@@ -13,6 +14,8 @@
 \abstract{Modellers of Malaria transmission often encounter structural modelling issues such as misspecification, where the model is not consistent with the true data generating process, and non-identifiability, where a parameter cannot be determined from observational data. Structural modelling issues are challenging to resolve given the vast space of admissible transmission models and non-unique resolutions. Navigating the landscape of admissible models requires a careful combination of prior knowledge and Bayesian model diagnostics. We propose an harness for proposing and evaluating likely malaria transmission models and an empirical analysis of the resulting landscape.}
 
 \section{Introduction}
+
+Target https://www.sim2science.com/index.html
 
 \subsection{Malaria transmission modelling}
 
@@ -59,32 +62,63 @@ No LLM driven program search has been applied to malaria transmission modelling 
 
 % Evaluation and diagnostics (our own)
 % - MCMC metrics
-% - Predictive metrics In distribution / OOD (LOSO-PSIS)
+% - Predictive metrics In distribution / OOD (leave-one-study-out, by refitting)
 
-% LLM, Agents, Search harnesses
+% LLM, Agents, Search harnesses (Analysis bench, brief)
 
 \section{Analysis of the baseline model fit}
 
 Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin}. We found that differentiable MCMC produced more reliable estimates which alter the previous posterior, gaps in predictive performance are a result of mis-specification rather than mis-sampling, and incorporating realistic demographics and observational data at higher ages futher update the posterior.
 
-\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin} with poor convergence diagnostics ($\hat{r}$=..., ESS=...), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics ($\hat{r}$=..., ESS=...) - see \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS posterior exhibited a larger marginal likelihood (... vs ...), confirming the reliability of the sample.
+\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin} with poor convergence diagnostics ($\hat{r}$=..., ESS=...), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics ($\hat{r}$=..., ESS=...) - see \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS chains also reached a higher log posterior density (... vs ...), indicating that the SA sample had not settled in the dominant posterior mode.
 
-\paragraph{Posterior predictive.} The NUTS posterior exhibited worse predictive performance than SA, Expected Log Probability Density (ELPD) ... < ..., despite better convergence statistics. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
+\paragraph{Posterior predictive.} The NUTS posterior exhibited worse predictive performance than SA, expected log pointwise predictive density (ELPD) ... < ..., despite better convergence statistics. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
 
-\paragraph{Realistic demographics and adult data} ...
+\paragraph{Sensitivity to initialisation.} NUTS failed to converge within its compute budget (60 minutes, in which it acheives 205 steps) when initialised to the median of the prior. NUTS sampling exhibits long step times, which is indicative of a deep binary tree which struggles to navigate the posterior geometry. Moreover, the trace shows that estimates of phi1, log\_eir and ft\_study struggle to converge when initialised using the prior, see Section \ref{init} for init diagnostics. When initialised to the median estimate from the posterior provided by \citet{griffin}, NUTS is able to converge within 26 minutes (100 warmup steps and 100 samples).
+
+\paragraph{Realistic demographics and adult data} Align the baseline with a more realistic calibration scenario, we simulated demographics from WorldPop \citep{} and included observational data from participants greater than 20 years old. WorldPop data was extracted for each site at the year of observation, the equilibrium age populations were then computed from the extracted mortality rates. We then included incidence and prevalence observations from the original published studies, with participating ages as high as 80 years old. The updated fits are shown in Figure \ref{incumbent}.
 
 \section{Comparison of model search parameters}
 
-After establishing our baseline and evaluation metrics, we conducted various searches to see how it could be improved.
+After establishing our baseline and evaluation metrics, we conducted various searches to see alternative models compare.
+
+\paragraph{Starting point}
+
+One non-obvious search parameter is whether to start the search from \emph{scratch} or from the \emph{incumbent} model. To start from \emph{scratch} practically means to present a deliberately low performing, trivial model to demonstrate the function signature to the model. The benefit of this approach is that there is less steering and the search is more likely to explore new ground. To start from the \emph{incumbent} model is to provide it to the model proposer at the start of the search, akin to a model correction set up. The benefit of this approach is that the model can start from a more complex point, benefitting from prior research into the modelling problem and produce models which are more interpretable to those familiar with the existing model.
 
 \paragraph{Search aperture}
-% whole model x immunity only
 
-T
+An orthogonal parameter is the search aperture, specifying the editable parts of the model code, and thereby restricting the scope of the model search. We proposed two model search apertures for our baseline in particular: \emph{curves} and \emph{immunity}.
 
-\paragraph{Model correction}
+The \emph{Curves} aperture specifies the wider aperture where the search spans sub-models which are conditioned on EIR, treatment fractions, and demographics to generate prevalence and incidence for each age group - equilibrium prevalence/incidence vs age is the curve here, not the traditional prevalence/incidence vs time trajectories in dynamical models. The study effects and the observational model remain out of scope, this is to make model propositions comparable and to mitigate search hacking - where the proposer edits the model likelihood without changes to the mechanism to produce a more likely model (examples have been cited in \citep{}).
 
-% from (scratch x correction) 
+The \emph{Immunity} aperture specifies a narrower search where sub-models are conditioned on Force of Infection (by age) and generate probabilities for pre-erythrocytic infection, clinical infection and detection by microscopy. This leaves the incumbent's formulation of heterogeneity, and equilibrium prevalence and incidence from infection probabilities untouched.
+
+We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents, max\_tokens=..., thinking\_tokens=..., n\_tool\_calls=..., resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit. 
+
+\begin{tabular}{ll r r r r r r r r r r}
+\toprule
+start & aperture & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. & min & pars \\
+\midrule
+incumbent & curves & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 4 & 5.74 & 31 & 0 & 49.2 & 18 \\
+incumbent & immunity & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 4 & 5.74 & 31 & 0 & 53.5 & 18 \\
+incumbent & immunity & 3 & -190.3 & -773.8 & 0.895 & 6 & 3.62 & 27 & 0 & 51.7 & 21 \\
+incumbent & immunity & 5 & -190.5 & -786.4 & 0.947 & 1 & 1.09 & 127 & 0 & 38.7 & 14 \\
+incumbent & curves & 8 & -191.4 & -779.0 & 0.947 & 4 & 3.18 & 75 & 0 & 38.3 & 15 \\
+scratch & immunity & 4 & -199.1 & -1243.2 & 0.842 & 1 & 1.02 & 107 & 0 & 10.3 & 6 \\
+scratch & curves & 8 & -202.5 & -832.7 & 0.895 & 0 & 1.05 & 69 & 29 & 0.6 & 9 \\
+scratch & immunity & 2 & -204.2 & -1437.7 & 0.895 & 0 & 1.01 & 146 & 0 & 9.3 & 5 \\
+scratch & curves & 3 & -207.5 & -1226.6 & 0.947 & 0 & 1.04 & 64 & 0 & 0.4 & 6 \\
+scratch & curves & 0$^{\star}$ & -211.7 & -1712.6 & 0.895 & 0 & 1.01 & 159 & 0 & 0.2 & 3 \\
+scratch & curves & 6 & -212.6 & -1087.1 & 0.579 & 0 & 1.02 & 132 & 0 & 0.5 & 7 \\
+scratch & curves & 5 & -217.3 & -944.2 & 0.895 & 0 & 1.02 & 163 & 0 & 0.5 & 6 \\
+scratch & immunity & 5 & -217.8 & -1065.9 & 0.737 & 0 & 17.01 & 31 & 0 & 11.4 & 7 \\
+incumbent & curves & 1 & -218.1 & -1322.1 & 0.947 & 8 & 1.02 & 66 & 0 & 34.8 & 20 \\
+scratch & curves & 7 & -220.0 & -818.2 & 0.842 & 1 & 1.05 & 106 & 0 & 0.8 & 8 \\
+scratch & immunity & 0$^{\star}$ & -220.1 & -1724.9 & 0.842 & 0 & 1.01 & 58 & 0 & 8.4 & 3 \\
+scratch & curves & 2 & -222.9 & -1836.2 & 0.947 & 1 & 1.07 & 17 & 0 & 0.3 & 8 \\
+\bottomrule
+\end{tabular}
 
 % TODO:
 % increasing model size
