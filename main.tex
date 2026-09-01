@@ -15,8 +15,6 @@
 
 \section{Introduction}
 
-Target https://www.sim2science.com/index.html
-
 \subsection{Malaria transmission modelling}
 
 % The complexity, immunity, drugs, vectors
@@ -36,7 +34,7 @@ Moreover, the available data is generally high variance and sparse, due to low s
 
 All of these metrics are heavily influenced by the vectorial capacity, the rate of contact between infectious mosquitoes and susceptible humans. However, a myriad of confounding factors, such as demographics, seasonality, human habitats, land use, diagnostic methods and wider malaria controls can obscure their precise relationship. Understanding these relationships are essential for predicting and mitigating malaria burden, and so have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
 
-\paragraph{Griffin et al's transmission model} Human transmission is disaggregated into age and heterogeneity compartments. The average age and heterogeneity of biting rates. The force of infection for each compartment is influenced by the age group - with adults experiencing more bites - and heterogeneity group. Immunity levels is accrued on each exposure to malaria. Immunity types are divided into pre-erythrocytic, acquired clinical immunity, maternal clinical immunity and immunity to detection by microscopy. The probability of clinical, asymptomatic and subpatent infection for each compartment is derived from latent force of infection and immunity levels. Taken at equilibrium, this transmission offers a closed-form solution for incidence and prevalence across age compartments for a given Entomological Inoculation Rate (EIR). The full model is presented in the Appendix \ref{section:equilibrium}
+\paragraph{The baseline transmission model.} In \citet{griffin}, human transmission is disaggregated into age and heterogeneity compartments. The average age and heterogeneity of biting rates. The force of infection for each compartment is influenced by the age group - with adults experiencing more bites - and heterogeneity group. Immunity levels is accrued on each exposure to malaria. Immunity types are divided into pre-erythrocytic, acquired clinical immunity, maternal clinical immunity and immunity to detection by microscopy. The probability of clinical, asymptomatic and subpatent infection for each compartment is derived from latent force of infection and immunity levels. Taken at equilibrium, this transmission offers a closed-form solution for incidence and prevalence across age compartments for a given Entomological Inoculation Rate (EIR). The full model is presented in the Appendix \ref{section:equilibrium}
 
 \subsection{Agentic model discovery}
 
@@ -44,7 +42,7 @@ Large Language Models (LLMs) have increasingly been applied to scientific model 
 
 Since, there have been extensions which apply program search to discover probabilistic models. This is more challenging than symbolic regression, as evaluation is more computationally expensive and distributional metrics are more complex to reason about simple residuals. BoxLM \citep{li_icml_2024} proposed a process where an LLM synthesises a program and subsequently critiques it according to the Bayesian Workflow \citep{goodman}. G-Sim \citep{holt} and ModelSMC \cite{wahl} instead incorporated the SBI framework to allow models without tractable likelihoods, with ModelSMC in particular casting search as principled sample from the space of models given observation data.
 
-There has been limited research on search parameterisation and the choice of algorithm, leaving it to trail and error. The most popular algorithm is the "Islands model", where proposed models are divided into islands for resampling in order to maintain diversity, which is adopted by FunSearch, AlphaEvolve, LLM-SR, ShinkaEvolve \citep{}. MAP-Elites is an extension where the search space is structured into a grid such that diversity can be controlled across its axes, this is increasingly incorporated in LLM-driven Symbolic Regression methods \citep{}. Despite these advances in search algorithms, some would argue that Independant Identically Distributed (I.I.D) samples (or Best of N if one is interested in a single model) from the LLM remain competitive \citep{}. The algorithms for program search are sensitive to the task and search parameters, with frameworks leaving many options to the user including: model size, number of agents, prompt, diagnostics, starting model, etc. We focus on IID sampling in this work as it remains the simplest search algorithm and is less likely to confound our investigations into the influence of search parameterisations.
+There has been limited research on search parameterisation and the choice of algorithm, leaving it to trail and error. The most popular algorithm is the ``Islands model'', where proposed models are divided into islands for resampling in order to maintain diversity, which is adopted by FunSearch, AlphaEvolve, LLM-SR, ShinkaEvolve \citep{}. MAP-Elites is an extension where the search space is structured into a grid such that diversity can be controlled across its axes, this is increasingly incorporated in LLM-driven Symbolic Regression methods \citep{}. Despite these advances in search algorithms, some would argue that Independant Identically Distributed (I.I.D) samples (or Best of N if one is interested in a single model) from the LLM remain competitive \citep{}. The algorithms for program search are sensitive to the task and search parameters, with frameworks leaving many options to the user including: model size, number of agents, prompt, diagnostics, starting model, etc. We focus on IID sampling in this work as it remains the simplest search algorithm and is less likely to confound our investigations into the influence of search parameterisations.
 
 No LLM driven program search has been applied to malaria transmission modelling at the time of writing. It remains to be seen if LLMs can propose competitive models in a reasonable compute budget and if so, what the proposed models can tell us about the landscape of highly predictive, mechanistic models.
 
@@ -78,7 +76,7 @@ Here we present our findings in re-creating the malaria transmission model fits 
 
 \paragraph{Realistic demographics and adult data} Align the baseline with a more realistic calibration scenario, we simulated demographics from WorldPop \citep{} and included observational data from participants greater than 20 years old. WorldPop data was extracted for each site at the year of observation, the equilibrium age populations were then computed from the extracted mortality rates. We then included incidence and prevalence observations from the original published studies, with participating ages as high as 80 years old. The updated fits are shown in Figure \ref{incumbent}.
 
-\section{Comparison of model search parameters}
+\section{Model search construction}
 
 After establishing our baseline and evaluation metrics, we conducted various searches to see alternative models compare.
 
@@ -96,36 +94,73 @@ The \emph{Immunity} aperture specifies a narrower search where sub-models are co
 
 We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents, max\_tokens=..., thinking\_tokens=..., n\_tool\_calls=..., resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit. 
 
-\begin{tabular}{ll r r r r r r r r r r}
+\begin{table}
+\begin{tabular}{ll r r r r r r}
 \toprule
-start & aperture & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. & min & pars \\
+start & aperture & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & min & pars \\
 \midrule
-incumbent & curves & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 4 & 5.74 & 31 & 0 & 49.2 & 18 \\
-incumbent & immunity & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 4 & 5.74 & 31 & 0 & 53.5 & 18 \\
-incumbent & immunity & 3 & -190.3 & -773.8 & 0.895 & 6 & 3.62 & 27 & 0 & 51.7 & 21 \\
-incumbent & immunity & 5 & -190.5 & -786.4 & 0.947 & 1 & 1.09 & 127 & 0 & 38.7 & 14 \\
-incumbent & curves & 8 & -191.4 & -779.0 & 0.947 & 4 & 3.18 & 75 & 0 & 38.3 & 15 \\
-scratch & immunity & 4 & -199.1 & -1243.2 & 0.842 & 1 & 1.02 & 107 & 0 & 10.3 & 6 \\
-scratch & curves & 8 & -202.5 & -832.7 & 0.895 & 0 & 1.05 & 69 & 29 & 0.6 & 9 \\
-scratch & immunity & 2 & -204.2 & -1437.7 & 0.895 & 0 & 1.01 & 146 & 0 & 9.3 & 5 \\
-scratch & curves & 3 & -207.5 & -1226.6 & 0.947 & 0 & 1.04 & 64 & 0 & 0.4 & 6 \\
-scratch & curves & 0$^{\star}$ & -211.7 & -1712.6 & 0.895 & 0 & 1.01 & 159 & 0 & 0.2 & 3 \\
-scratch & curves & 6 & -212.6 & -1087.1 & 0.579 & 0 & 1.02 & 132 & 0 & 0.5 & 7 \\
-scratch & curves & 5 & -217.3 & -944.2 & 0.895 & 0 & 1.02 & 163 & 0 & 0.5 & 6 \\
-scratch & immunity & 5 & -217.8 & -1065.9 & 0.737 & 0 & 17.01 & 31 & 0 & 11.4 & 7 \\
-incumbent & curves & 1 & -218.1 & -1322.1 & 0.947 & 8 & 1.02 & 66 & 0 & 34.8 & 20 \\
-scratch & curves & 7 & -220.0 & -818.2 & 0.842 & 1 & 1.05 & 106 & 0 & 0.8 & 8 \\
-scratch & immunity & 0$^{\star}$ & -220.1 & -1724.9 & 0.842 & 0 & 1.01 & 58 & 0 & 8.4 & 3 \\
-scratch & curves & 2 & -222.9 & -1836.2 & 0.947 & 1 & 1.07 & 17 & 0 & 0.3 & 8 \\
+incumbent & curves & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 49.2 & 18 \\
+incumbent & immunity & 0$^{\star}$ & -188.5 & -769.8 & 0.895 & 53.5 & 18 \\
+incumbent & immunity & 3 & -190.3 & -773.8 & 0.895 & 51.7 & 21 \\
+incumbent & immunity & 5 & -190.5 & -786.4 & 0.947 & 38.7 & 14 \\
+incumbent & curves & 8 & -191.4 & -779.0 & 0.947 & 38.3 & 15 \\
+scratch & immunity & 4 & -199.1 & -1243.2 & 0.842 & 10.3 & 6 \\
+scratch & curves & 8 & -202.5 & -832.7 & 0.895 & 0.6 & 9 \\
+scratch & immunity & 2 & -204.2 & -1437.7 & 0.895 & 9.3 & 5 \\
+scratch & curves & 3 & -207.5 & -1226.6 & 0.947 & 0.4 & 6 \\
+scratch & curves & 0$^{\star}$ & -211.7 & -1712.6 & 0.895 & 0.2 & 3 \\
+scratch & curves & 6 & -212.6 & -1087.1 & 0.579 & 0.5 & 7 \\
+scratch & curves & 5 & -217.3 & -944.2 & 0.895 & 0.5 & 6 \\
+scratch & immunity & 5 & -217.8 & -1065.9 & 0.737 & 11.4 & 7 \\
+incumbent & curves & 1 & -218.1 & -1322.1 & 0.947 & 34.8 & 20 \\
+scratch & curves & 7 & -220.0 & -818.2 & 0.842 & 0.8 & 8 \\
+scratch & immunity & 0$^{\star}$ & -220.1 & -1724.9 & 0.842 & 8.4 & 3 \\
+scratch & curves & 2 & -222.9 & -1836.2 & 0.947 & 0.3 & 8 \\
 \bottomrule
 \end{tabular}
+  \caption{Evaluation for models proposed by all searches}
+  \label{tab:evaluation}
+\end{table}
+
+\begin{table}
+\begin{tabular}{ll r r r r r}
+\toprule
+start & aperture & cand. & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. \\
+\midrule
+incumbent & curves & 0$^{\star}$ & 4 & 5.74 & 31 & 0 \\
+incumbent & immunity & 0$^{\star}$ & 4 & 5.74 & 31 & 0 \\
+incumbent & immunity & 3 & 6 & 3.62 & 27 & 0 \\
+incumbent & immunity & 5 & 1 & 1.09 & 127 & 0 \\
+incumbent & curves & 8 & 4 & 3.18 & 75 & 0 \\
+scratch & immunity & 4 & 1 & 1.02 & 107 & 0 \\
+scratch & curves & 8 & 0 & 1.05 & 69 & 29 \\
+scratch & immunity & 2 & 0 & 1.01 & 146 & 0 \\
+scratch & curves & 3 & 0 & 1.04 & 64 & 0 \\
+scratch & curves & 0$^{\star}$ & 0 & 1.01 & 159 & 0 \\
+scratch & curves & 6 & 0 & 1.02 & 132 & 0 \\
+scratch & curves & 5 & 0 & 1.02 & 163 & 0 \\
+scratch & immunity & 5 & 0 & 17.01 & 31 & 0 \\
+incumbent & curves & 1 & 8 & 1.02 & 66 & 0 \\
+scratch & curves & 7 & 1 & 1.05 & 106 & 0 \\
+scratch & immunity & 0$^{\star}$ & 0 & 1.01 & 58 & 0 \\
+scratch & curves & 2 & 1 & 1.07 & 17 & 0 \\
+\bottomrule
+\end{tabular}
+  \caption{MCMC fitting diagnostics for models proposed by all searches, ordered as in Table~\ref{tab:evaluation}}
+  \label{tab:mcmc}
+\end{table}
+
+\paragraph{Model performance} TODO
+% NOTE: The curves scratch required more tokens and time since it prompted more exploration
 
 % TODO:
 % increasing model size
 % increasing proposal samples
 % traditional vs agentic model proposals
 
-\section{An analysis of the model landscape}
+\section{Model landscape}
+
+% diversity
 
 % curvature of model likelihood
 
