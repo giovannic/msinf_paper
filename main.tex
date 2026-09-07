@@ -7,6 +7,8 @@
 \usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{booktabs}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
 
 \begin{document}
 \maketitle
@@ -68,15 +70,73 @@ No LLM driven program search has been applied to malaria transmission modelling 
 
 Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin_estimates_2014}. We found that differentiable MCMC produced more reliable estimates which alter the previous posterior, gaps in predictive performance are a result of mis-specification rather than mis-sampling, and incorporating realistic demographics and observational data at higher ages futher update the posterior.
 
-\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin_estimates_2014} with poor convergence diagnostics ($\hat{r}$=..., ESS=...), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics ($\hat{r}$=..., ESS=...) - see \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS chains also reached a higher log posterior density (... vs ...), indicating that the SA sample had not settled in the dominant posterior mode.
+\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin_estimates_2014} with poor convergence diagnostics (worst-case $\hat{r}$=1.43, minimum bulk ESS=8), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics (worst-case $\hat{r}$=1.04, minimum bulk ESS=99) - see Appendix \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS chains also reached a higher log posterior density (... vs ...), indicating that the SA sample had not settled in the dominant posterior mode.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{immunity.png}
+  \caption{Immunity probability functions over exposure count, with sampled trajectories and median overlays for the prior, the NUTS posterior, and the \citet{griffin_estimates_2014} reference posterior.}
+  \label{immunity}
+\end{figure}
 
 \paragraph{Posterior predictive.} The NUTS posterior exhibited worse predictive performance than SA, expected log pointwise predictive density (ELPD) ... < ..., despite better convergence statistics. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
 
-\paragraph{Sensitivity to initialisation.} NUTS failed to converge within its compute budget (60 minutes, in which it acheives 205 steps) when initialised to the median of the prior. NUTS sampling exhibits long step times, which is indicative of a deep binary tree which struggles to navigate the posterior geometry. Moreover, the trace shows that estimates of phi1, log\_eir and ft\_study struggle to converge when initialised using the prior, see Section \ref{init} for init diagnostics. When initialised to the median estimate from the posterior provided by \citet{griffin_estimates_2014}, NUTS is able to converge within 26 minutes (100 warmup steps and 100 samples).
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{predictive_incidence.png}
+  \includegraphics[width=\textwidth]{predictive_prevalence.png}
+  \caption{Site-faceted posterior predictive overlays for the NUTS fit. Top: observed clinical incidence against predicted observed-scale incidence rates. Bottom: observed microscopy prevalence against predicted observed-scale prevalence.}
+  \label{predictive}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{griffin_predictive.png}
+  \caption{Incidence-age grid comparing posterior median curves with bootstrap uncertainty bands for the NUTS fit and the \citet{griffin_estimates_2014} reference posterior, across EIR $\times$ treatment fraction panels.}
+  \label{griffin_predictive}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{init_warmup_median.png}
+  \caption{Warmup traces for the core parameters when NUTS is initialised at the median of the prior. Compare Figure \ref{init_griffin}, initialised at the \citet{griffin_estimates_2014} posterior median.}
+  \label{init}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{init_warmup_griffin.png}
+  \caption{Warmup traces for the core parameters when NUTS is initialised at the \citet{griffin_estimates_2014} posterior median.}
+  \label{init_griffin}
+\end{figure}
+
+\paragraph{Sensitivity to initialisation.} NUTS failed to converge when initialised to the median of the prior. NUTS sampling exhibits long step times, which is indicative of a deep binary tree which struggles to navigate the posterior geometry. Moreover, the trace shows that estimates of phi1, log\_eir and ft\_study struggle to converge when initialised using the prior, see Section \ref{init} for init diagnostics. When initialised to the median estimate from the posterior provided by \citet{griffin_estimates_2014}, NUTS was able to converge.
+
+To remediate sensitivity to initialisation for arbitrary model variants, for which we will not have prior knowledge of good initialisation values, we implemented Pathfinder initialisation. We found that it led to comparable convergence diagnostics to when initialised with the previous posterior (worst-case $\hat{r}$ = 1.03 vs $\hat{r}$ = 1.04), at a cost of 79 seconds of Pathfinder fitting before sampling begins.
+% Sources: Pathfinder = discovery runs_agentic/09-incumbent-pathfinder-100-100-2h
+%   (rhat_max 1.0330, min_ess 80.5, pathfinder_seconds 79.0, pathfinder_khat 3.19).
+% Previous-posterior init = msinf 2026-08-12/16-25-13 (init_strategy=griffin, NUTS 100/100,
+%   max r_hat 1.0391, min bulk ESS 99).
+% CAVEAT: these two are not the same fit. The msinf baseline uses griffin priors and no
+% holdout; the discovery run uses xi priors and the study_n3_seed42 3-study holdout.
+% The same-harness pair is 08-incumbent-100-100-2h (default griffin init, rhat_max 3.30,
+% min_ess 2.20) vs 09 (pathfinder, rhat_max 1.03, min_ess 80.5) -- on that pair Pathfinder
+% is markedly BETTER than the previous-posterior init, not comparable to it.
+% To state either claim cleanly, run msinf's own init sweep: conf/config.yaml already
+% defines arms: [griffin, median, pathfinder, fullrank].
 
 \paragraph{Realistic demographics and adult data} Align the baseline with a more realistic calibration scenario, we simulated demographics from WorldPop \citep{Tatem2017Jan} and included observational data from participants greater than 20 years old. WorldPop data was extracted for each site at the year of observation, the equilibrium age populations were then computed from the extracted mortality rates. We then included incidence and prevalence observations from the original published studies, with participating ages as high as 80 years old. The updated fits are shown in Figure \ref{incumbent}.
 
-\section{Model search construction}
+% TODO: the adult data half of this paragraph is not yet run. Every fit to date
+% uses study_data_2014_age_le20.csv, i.e. observations are truncated at 20 years.
+% The WorldPop demography is done (msinf runs 2026-08-14/17-04-12 and 17-04-15,
+% via data.mortality_csv=artifacts/demography/site_mortality_griffin_grid.csv),
+% but both of those are also age_le20 and neither has a diagnostics bundle yet.
+% Needed: (a) diagnostics over 17-04-12/17-04-15 to produce Figure \ref{incumbent},
+% (b) a refit against the all-ages table before the ">20 years old" and
+% "as high as 80 years old" claims above can stand.
+
+\section{Local model search}
 
 After establishing our baseline and evaluation metrics, we conducted various searches to see alternative models compare.
 
@@ -92,7 +152,9 @@ The \emph{Curves} aperture specifies the wider aperture where the search spans s
 
 The \emph{Immunity} aperture specifies a narrower search where sub-models are conditioned on Force of Infection (by age) and generate probabilities for pre-erythrocytic infection, clinical infection and detection by microscopy. This leaves the incumbent's formulation of heterogeneity, and equilibrium prevalence and incidence from infection probabilities untouched.
 
-We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents, max\_tokens=..., thinking\_tokens=..., n\_tool\_calls=..., resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit. 
+We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents drawn from Qwen3.5-122B-A10B-FP8 at temperature 1.0, with max\_tokens=32768, thinking\_tokens=2048 and a budget of 50 tool calls per agent, resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit.
+
+We found that a small minority of proposals produced simpler, more identifiable models, which were cheaper to fit, and with minimal degredation in predictive performance (incumbent immunity candidate 5, and incumbent curves candidate 8). Most proposals produced significantly worse predictions. Proposals which were started from scratch were the simplest (L-U parameters, and fit within L-U minutes), with generally worse predictive performance.
 
 \begin{table}
 \begin{tabular}{ll r r r r r r}
@@ -118,9 +180,230 @@ scratch & immunity & 0$^{\star}$ & -220.1 & -1724.9 & 0.842 & 8.4 & 3 \\
 scratch & curves & 2 & -222.9 & -1836.2 & 0.947 & 0.3 & 8 \\
 \bottomrule
 \end{tabular}
-  \caption{Evaluation for models proposed by all searches}
+  \caption{Evaluation for models proposed by all local searches}
   \label{tab:evaluation}
 \end{table}
+
+\section{Frontier model search}
+
+To investigate the gap between local models and the frontier, we also ran searches with Anthropic's Claude and OpenAI's ChatGPT, through the claude code and codex harnesses respectively. We searched from the incumbent starting point with the curves aperture, as it was the most promising configuration for mechanistic model search in the local search experiment. We tried two different model sizes for each model provider: Haiku 4.5 (\texttt{claude-haiku-4-5-20251001}) and Opus 5 (\texttt{claude-opus-5}) from Anthropic, and GPT-5.6 luna (\texttt{gpt-5.6-luna}) and GPT-5.6 sol (\texttt{gpt-5.6-sol}) from OpenAI. A major difference from the previous experiment is that we imposed a 15 minute time limit to restrict the costs for a search and make it acheivable with a base subscription, future work may wish to explore API billing to make this run comparable with the previous experiment. Each search consisted of 8 agents per model, giving 32 proposals which were fitted alongside the incumbent under the same pathfinder initialisation and the same three-study holdout as the local searches. Of the 32 proposals, 24 compiled and fit: 8 of 8 for Haiku, 4 of 8 for Opus, 4 of 8 for luna and 8 of 8 for sol. The results for this search are shown in Table \ref{tab:frontier_evaluation} and \ref{tab:frontier_mcmc}.
+
+% Sources: discovery remote/runs_agentic, built by
+%   uv run python -m examples.malaria.frontier remote/runs_agentic --latex --table eval|mcmc
+% Claude arm = runs_agentic/18-claude-haiku-opus-16-pathfinder (proposals combined from
+%   10-claude-haiku-8 and 11-claude-opus-8); codex arm = 17-codex-luna-sol-16-pathfinder
+%   (proposals combined from 03/04 = luna and 05/06 = sol).
+% 11 of the 16 codex candidates originally failed the prior-draw gate because the proposal
+%   wrapped its region in a redundant `def parameters():`, which is a harness-compatibility
+%   fault and not a modelling one. Those 11 were repaired and refitted in
+%   runs_agentic/18-codex-luna-sol-11-pathfinder-fixed; frontier.py prefers those records,
+%   matched to candidate indices by proposal filename because the refit renumbers from zero.
+%   4 luna candidates still fail: 2, 3 and 7 did not fit within 3600s and 6 raised
+%   NameError on prior draws. If the write-up should say that the codex proposals needed a
+%   repair the claude ones did not, this is the place to say it.
+
+\begin{table}
+\begin{tabular}{ll r r r r r r}
+\toprule
+harness & model & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & min & pars \\
+\midrule
+claude code & claude-haiku-4-5-20251001 & 3 & -184.3 & -901.9 & 1.000 & 21.1 & 15 \\
+codex & gpt-5.6-sol & 15 & -184.8 & -868.2 & 0.947 & 57.5 & 7 \\
+claude code & claude-haiku-4-5-20251001 & 4 & -185.5 & -795.1 & 0.947 & 29.8 & 17 \\
+codex & gpt-5.6-sol & 10 & -185.6 & -870.2 & 0.947 & 16.4 & 8 \\
+codex & gpt-5.6-luna & 4 & -186.7 & -779.5 & 0.895 & 47.1 & 18 \\
+codex & gpt-5.6-luna & 8 & -186.8 & -775.6 & 0.947 & 51.0 & 18 \\
+codex & gpt-5.6-luna & 5 & -186.8 & -771.1 & 0.947 & 54.9 & 20 \\
+claude code & claude-opus-5 & 11 & -186.8 & -770.3 & 0.947 & 47.5 & 15 \\
+codex & gpt-5.6-sol & 13 & -187.4 & -772.1 & 0.947 & 47.8 & 11 \\
+- & incumbent & 0$^{\star}$ & -187.5 & -770.9 & 0.947 & 56.4 & 18 \\
+claude code & claude-opus-5 & 10 & -187.6 & -771.5 & 0.947 & 56.2 & 21 \\
+claude code & claude-opus-5 & 13 & -188.4 & -770.8 & 0.947 & 55.7 & 19 \\
+claude code & claude-haiku-4-5-20251001 & 6 & -188.5 & -770.6 & 1.000 & 57.6 & 13 \\
+claude code & claude-opus-5 & 15 & -189.0 & -768.1 & 0.947 & 44.5 & 15 \\
+claude code & claude-haiku-4-5-20251001 & 2 & -189.5 & -770.9 & 0.947 & 53.3 & 19 \\
+claude code & claude-haiku-4-5-20251001 & 8 & -189.7 & -792.9 & 0.947 & 29.3 & 13 \\
+codex & gpt-5.6-sol & 11 & -189.9 & -772.8 & 0.947 & 50.5 & 16 \\
+codex & gpt-5.6-luna & 1 & -190.3 & -818.6 & 0.895 & 49.7 & 18 \\
+claude code & claude-haiku-4-5-20251001 & 7 & -192.4 & -775.0 & 0.947 & 30.9 & 15 \\
+codex & gpt-5.6-sol & 12 & -193.5 & -832.0 & 0.947 & 0.3 & 7 \\
+codex & gpt-5.6-sol & 14 & -193.9 & -1044.9 & 0.947 & 0.3 & 8 \\
+claude code & claude-haiku-4-5-20251001 & 5 & -194.2 & -773.0 & 0.947 & 53.1 & 14 \\
+codex & gpt-5.6-sol & 9 & -196.3 & -798.1 & 0.947 & 27.0 & 6 \\
+codex & gpt-5.6-sol & 16 & -199.4 & -842.4 & 0.895 & 0.4 & 10 \\
+claude code & claude-haiku-4-5-20251001 & 1 & -200.0 & -953.9 & 0.947 & 57.6 & 13 \\
+\bottomrule
+\end{tabular}
+  \caption{Evaluation for models proposed by the frontier searches, ranked as in Table~\ref{tab:evaluation}. $\star$ marks the incumbent the searches started from.}
+  \label{tab:frontier_evaluation}
+\end{table}
+
+Similarly to the local model search, proposed models were only preferable in terms of simplicity, MCMC diagnostics and speed to fit (sol candidate 15, sol candidate 10 and opus candidate 11). No proposals were significantly more predictive. There was no favoured model for predictive performance (spearmans = ...).
+
+From a cost perspective, claude based proposals costed X more than chatGPT based proposals (X +- vs Y +-), and took Y times as long (X +- vs Y+-). This is due to Claude's tendency to explore and call tools (X tool calls vs Y tool calls).
+
+\section{Model landscape}
+
+% diversity
+
+% curvature of model likelihood
+
+% qualitative analysis of structural motifs
+
+\begin{table}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.24\textwidth} p{0.34\textwidth} p{0.34\textwidth}}
+\toprule
+motif & frontier & open \\
+\midrule
+M1. Immunity consolidation: collapse IB/IC/ID into one or two shared latent levels, or tie their decay and shape constants
+  & haiku 4, 6, 8; opus 11, 15, 16$^{\dagger}$; sol 9, 10, 15
+  & inc/cur 1, 2$^{\dagger}$, 3$^{\dagger}$, 4$^{\dagger}$, 5$^{\dagger}$, 6$^{\dagger}$, 7$^{\dagger}$; inc/imm 2$^{\dagger}$, 5, 6$^{\dagger}$, 7$^{\dagger}$, 8$^{\dagger}$; scr/imm 1$^{\dagger}$, 2, 3$^{\dagger}$, 4, 5, 6$^{\dagger}$, 7$^{\dagger}$ \\
+\addlinespace
+M2. Exposure-independent age maturation of clinical risk: an age factor on $\phi$, or damping the exposure that builds IC
+  & opus 9$^{\dagger}$, 10, 12$^{\dagger}$, 13, 14$^{\dagger}$, 15; luna 1, 2$^{\dagger}$, 4, 6$^{\dagger}$, 7$^{\dagger}$, 8
+  & inc/cur 1; scr/cur 5 \\
+\addlinespace
+M3. Simplify or remove the age-explicit detectability modifier $f_d$ (fd0, ad0, gd)
+  & haiku 1, 2, 5, 6; opus 9$^{\dagger}$, 11, 13, 14$^{\dagger}$, 15, 16$^{\dagger}$; sol 11
+  & inc/cur 3$^{\dagger}$, 6$^{\dagger}$, 8; inc/imm 1$^{\dagger}$, 4$^{\dagger}$, 5 \\
+\addlinespace
+M4. Drop the asymptote floors $b_1$ and $\phi_1$ for pure Hill saturation
+  & haiku 1, 4, 5, 7, 8
+  & inc/cur 2$^{\dagger}$, 3$^{\dagger}$; inc/imm 2$^{\dagger}$, 5, 7$^{\dagger}$ \\
+\addlinespace
+M5. Fix or tie the Hill shape exponents ($k=1$, $k$ shared, or hard-coded)
+  & haiku 3, 7, 8; opus 15; sol 10, 13
+  & inc/imm 8$^{\dagger}$ \\
+\addlinespace
+M6. Immunity acts on infection duration: the acquired level raises the clearance rate $r_A$, not only detectability
+  & opus 11, 16$^{\dagger}$
+  & scr/cur 4$^{\dagger}$, 6 \\
+\addlinespace
+M7. Saturating force of infection in EIR (superinfection or refractory cap)
+  & luna 4; sol 15
+  & scr/cur 8 \\
+\addlinespace
+M8. Maternal immunity simplified: bin-averaged integral replaced by a pointwise exponential, constants fixed, or the term dropped
+  & haiku 1; sol 9, 10, 15
+  & inc/cur 1, 2$^{\dagger}$, 3$^{\dagger}$, 4$^{\dagger}$, 6$^{\dagger}$; inc/imm 1$^{\dagger}$, 5, 6$^{\dagger}$, 8$^{\dagger}$; all scr/imm \\
+\addlinespace
+M9. Abandon the compartmental equilibrium for an algebraic age $\times$ EIR surface
+  & sol 12, 14, 16
+  & scr/cur 1$^{\dagger}$, 2, 3, 4$^{\dagger}$, 5, 6, 7, 8 \\
+\addlinespace
+M10. Rewrite the biting and exposure age profile $\psi$
+  & luna 3$^{\dagger}$, 6$^{\dagger}$; sol 16
+  & scr/cur 1$^{\dagger}$--8 \\
+\addlinespace
+M11. Non-constant immunity time-scale: a durable plus recent component, or a decay that lengthens with cumulative exposure
+  & luna 5
+  & inc/cur 1; inc/imm 3; scr/cur 6 \\
+\addlinespace
+M12. Recursion initialisation: a half-interval birth value for the backward-Euler immunity level
+  & sol 13
+  & --- \\
+\bottomrule
+\end{tabular}
+  \caption{Structural motifs across all proposals, disaggregated by search. Frontier candidates are named by the model that proposed them and indexed as in Table~\ref{tab:frontier_evaluation}; open candidates are named by their sweep cell (\emph{inc}/\emph{scr} for the incumbent and scratch starting points, \emph{cur}/\emph{imm} for the curves and immunity apertures) and indexed as in Table~\ref{tab:evaluation}. A proposal may carry more than one motif. $\dagger$ marks a proposal that did not compile and fit, and so has no row in either evaluation table. The frontier searches were run only at the incumbent start with the curves aperture, so M9 and M10 in the open arm are largely a consequence of the scratch seed, which supplies a flat algebraic mechanism and no compartments.}
+  \label{tab:motifs}
+\end{table}
+
+% sensitivity of ESS to structural motifs
+
+\begin{table}
+\centering
+\small
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{l r rr rr rr rr rr}
+\toprule
+& & \multicolumn{2}{c}{ESS$_{\mathrm{tail}}$} & \multicolumn{2}{c}{min} & \multicolumn{2}{c}{$\mathrm{elpd}_{\mathrm{train}}$} & \multicolumn{2}{c}{$\mathrm{elpd}$} & \multicolumn{2}{c}{unid.} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12}
+motif & n & with & w/o & with & w/o & with & w/o & with & w/o & with & w/o \\
+\midrule
+M1 consolidation & 8 & 80 & 54 & 37.1 & 50.1 & -794.0 & -775.3 & -187.7 & -189.7 & 2.0 & 2.5 \\
+M2 age maturation & 6 & 34 & 78 & 50.4 & 39.2 & -773.5 & -794.0 & -188.0 & -189.6 & 3.5 & 1.0 \\
+M3 $f_d$ simplified & 8 & 44 & 77 & 53.2 & 30.4 & -770.8 & -796.6 & -189.2 & -187.5 & 3.5 & 1.0 \\
+M4 no floors & 5 & 62 & 74 & 30.9 & 47.8 & -792.9 & -775.6 & -192.4 & -188.4 & 4.0 & 1.0 \\
+M5 fixed exponents & 6 & 54 & 68 & 30.1 & 50.8 & -784.0 & -777.5 & -188.2 & -189.0 & 1.5 & 3.0 \\
+M7 foi cap & 2 & 108 & 68 & 52.3 & 47.6 & -823.9 & -775.3 & -185.8 & -189.2 & 2.0 & 2.5 \\
+M8 maternal & 4 & 99 & 68 & 42.2 & 47.6 & -869.2 & -774.0 & -190.9 & -188.8 & 0.5 & 3.0 \\
+M9 phenom.\ curves & 3 & 93 & 62 & 0.3 & 49.7 & -842.4 & -775.0 & -193.9 & -188.4 & 0.0 & 3.0 \\
+\midrule
+\multicolumn{2}{l}{incumbent} & \multicolumn{2}{c}{80} & \multicolumn{2}{c}{56.4} & \multicolumn{2}{c}{-770.9} & \multicolumn{2}{c}{-187.5} & \multicolumn{2}{c}{4} \\
+\bottomrule
+\end{tabular}
+  \caption{Sensitivity of sampling and predictive diagnostics to structural motifs, over the 24 frontier candidates that compiled and fit. Each cell is the median over the candidates that carry the motif and over those that do not; motifs carried by fewer than two fitted candidates (M6, M10, M11, M12) are omitted, and the incumbent is shown as a baseline rather than as a row. Candidates carry 2.1 motifs on average and no motif is randomised against the others, so these are contrasts and not estimated effects. Fitting time is right-censored at the 3600\,s fit timeout, with fifteen of the twenty-four candidates between 44 and 58 minutes, and ESS$_{\mathrm{tail}}$ is not a reliable summary for the eleven candidates whose chains did not mix ($\hat{R} > 1.1$), for which unid.\ is the better read. Across all twenty-four candidates the rank correlation between $\mathrm{elpd}_{\mathrm{train}}$ and $\mathrm{elpd}$ is 0.14, between $\mathrm{elpd}_{\mathrm{train}}$ and the parameter count 0.58, and between $\mathrm{elpd}_{\mathrm{train}}$ and ESS$_{\mathrm{tail}}$ $-0.53$.}
+  \label{tab:motif_sensitivity}
+\end{table}
+
+\section{Discussion}
+
+\section{Future work}
+
+% Other malaria models
+
+% More data (higher ages, information extraction)
+
+% Seasonality
+
+% Compare to sophisticated search algorithms
+
+\appendix
+
+\section{MCMC convergence diagnostics}
+\label{mcmc}
+
+Table \ref{tab:convergence} reports per-parameter convergence diagnostics for the two baseline fits of the \citet{griffin_estimates_2014} model. Both were run with four chains over the same observational table and the same priors; SA was given 1000 warmup and 1000 sampling iterations per chain, NUTS 100 and 100. Trace plots for the sampling phase are shown in Figures \ref{trace_sa} and \ref{trace_nuts}.
+
+\begin{table}
+\centering
+\begin{tabular}{l r r r r r r}
+\toprule
+& \multicolumn{3}{c}{SA} & \multicolumn{3}{c}{NUTS} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+parameter & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ \\
+\midrule
+ad0 & 1.19 & 15 & 206 & 1.02 & 236 & 248 \\
+b0 & 1.17 & 16 & 87 & 1.02 & 147 & 202 \\
+d1 & 1.11 & 24 & 188 & 1.01 & 779 & 186 \\
+dm & 1.02 & 442 & 495 & 1.03 & 121 & 306 \\
+fd0 & 1.34 & 9 & 50 & 1.00 & 430 & 214 \\
+gd & 1.12 & 22 & 151 & 1.04 & 371 & 241 \\
+IB0 & 1.33 & 10 & 41 & 1.02 & 197 & 258 \\
+IC0 & 1.17 & 16 & 45 & 1.01 & 131 & 151 \\
+ID0 & 1.43 & 8 & 32 & 1.00 & 236 & 267 \\
+kb & 1.07 & 36 & 646 & 1.03 & 194 & 180 \\
+kc & 1.07 & 38 & 162 & 1.02 & 197 & 231 \\
+kd & 1.11 & 23 & 242 & 1.00 & 457 & 309 \\
+phi0 & 1.25 & 12 & 51 & 1.01 & 335 & 275 \\
+phi1 & 1.03 & 94 & 209 & 1.02 & 255 & 209 \\
+PM & 1.08 & 32 & 133 & 1.03 & 99 & 166 \\
+ub & 1.31 & 10 & 59 & 1.04 & 104 & 132 \\
+uc & 1.05 & 69 & 230 & 1.00 & 148 & 88 \\
+ud & 1.33 & 10 & 33 & 1.01 & 555 & 148 \\
+\bottomrule
+\end{tabular}
+  \caption{Per-parameter convergence diagnostics for the SA and NUTS baseline fits. SA fails to reach $\hat{r} < 1.1$ on eleven of the eighteen core parameters despite ten times the sampling budget.}
+  \label{tab:convergence}
+\end{table}
+
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{trace_sa.png}
+  \caption{Trace plots for the core parameters of the SA fit over the sampling phase.}
+  \label{trace_sa}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{trace_nuts.png}
+  \caption{Trace plots for the core parameters of the NUTS fit over the sampling phase.}
+  \label{trace_nuts}
+\end{figure}
 
 \begin{table}
 \begin{tabular}{ll r r r r r}
@@ -146,39 +429,47 @@ scratch & immunity & 0$^{\star}$ & 0 & 1.01 & 58 & 0 \\
 scratch & curves & 2 & 1 & 1.07 & 17 & 0 \\
 \bottomrule
 \end{tabular}
-  \caption{MCMC fitting diagnostics for models proposed by all searches, ordered as in Table~\ref{tab:evaluation}}
+  \caption{MCMC fitting diagnostics for models proposed by all local searches, ordered as in Table~\ref{tab:evaluation}}
   \label{tab:mcmc}
 \end{table}
 
-\paragraph{Model performance} TODO
-% NOTE: The curves scratch required more tokens and time since it prompted more exploration
 
-% TODO:
-% increasing model size
-% increasing proposal samples
-% traditional vs agentic model proposals
+\begin{table}
+\begin{tabular}{ll r r r r r}
+\toprule
+harness & model & cand. & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. \\
+\midrule
+claude code & claude-haiku-4-5-20251001 & 3 & 0 & 1.01 & 176 & 0 \\
+codex & gpt-5.6-sol & 15 & 1 & 1.02 & 195 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 4 & 5 & 1.04 & 164 & 0 \\
+codex & gpt-5.6-sol & 10 & 0 & 1.03 & 136 & 0 \\
+codex & gpt-5.6-luna & 4 & 3 & 1.07 & 21 & 0 \\
+codex & gpt-5.6-luna & 8 & 4 & 1.80 & 74 & 0 \\
+codex & gpt-5.6-luna & 5 & 6 & 1.15 & 41 & 0 \\
+claude code & claude-opus-5 & 11 & 1 & 1.05 & 80 & 0 \\
+codex & gpt-5.6-sol & 13 & 1 & 2.48 & 28 & 0 \\
+- & incumbent & 0$^{\star}$ & 4 & 1.03 & 80 & 0 \\
+claude code & claude-opus-5 & 10 & 5 & 1.47 & 46 & 0 \\
+claude code & claude-opus-5 & 13 & 5 & 1.30 & 12 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 6 & 3 & 1.07 & 77 & 0 \\
+claude code & claude-opus-5 & 15 & 3 & 2.76 & 17 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 2 & 4 & 1.02 & 86 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 8 & 4 & 1.04 & 80 & 0 \\
+codex & gpt-5.6-sol & 11 & 4 & 1.80 & 13 & 0 \\
+codex & gpt-5.6-luna & 1 & 1 & 1.11 & 133 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 7 & 2 & 4.55 & 14 & 7 \\
+codex & gpt-5.6-sol & 12 & 0 & 1.03 & 144 & 0 \\
+codex & gpt-5.6-sol & 14 & 1 & 1.06 & 93 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 5 & 5 & 1.14 & 26 & 0 \\
+codex & gpt-5.6-sol & 9 & 0 & 3.44 & 27 & 0 \\
+codex & gpt-5.6-sol & 16 & 0 & 1.07 & 61 & 0 \\
+claude code & claude-haiku-4-5-20251001 & 1 & 1 & 1.09 & 62 & 0 \\
+\bottomrule
+\end{tabular}
+  \caption{MCMC fitting diagnostics for models proposed by the frontier searches, ordered as in Table~\ref{tab:frontier_evaluation}}
+  \label{tab:frontier_mcmc}
+\end{table}
 
-\section{Model landscape}
-
-% diversity
-
-% curvature of model likelihood
-
-% qualitative analysis of structural motifs
-
-% sensitivity of model likelihood to structural motifs
-
-\section{Discussion}
-
-\section{Future work}
-
-% Other malaria models
-
-% More data (higher ages, information extraction)
-
-% Seasonality
-
-% Compare to sophisticated search algorithms
 
 \bibliographystyle{plainnat}
 \bibliography{bib}
