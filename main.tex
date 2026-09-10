@@ -223,31 +223,57 @@ From a cost perspective, Claude based proposals required 2.3 times as many token
 
 \section{Model landscape}
 
-Across all proposals we identify twelve recurring structural motifs. Each is described below; Table~\ref{tab:motifs} records which candidates carry it.
+Across all proposals we found twelve structural motifs, to help describe the qualitative approaches taken by the agents:
 
-\paragraph{M1. Immunity consolidation:} collapse IB/IC/ID into one or two shared latent levels, or tie their decay and shape constants.
+\paragraph{M1. Immunity consolidation:} collapse IB/IC/ID into one or two shared immunity levels, or share their decay and shape constants.
 
-\paragraph{M2. Exposure-independent age maturation of clinical risk:} an age factor on $\phi$, or damping the exposure that builds IC.
+\paragraph{M2. Reduced exposure dependency on clinical infection:} Add dampening factors to the exposure that builds IC. Or compute $\phi$ from age instead of exposure.
 
-\paragraph{M3. Simplified detectability:} simplify or remove the age-explicit detectability modifier $f_d$ (fd0, ad0, gd).
+\paragraph{M3. Simplified detectability:} simplify or remove the age-dependent detectability modifier $f_d$ (fd0, ad0, gd).
 
-\paragraph{M4. Pure Hill saturation:} drop the asymptote floors $b_1$ and $\phi_1$.
+\paragraph{M4. Pure Hill saturation:} remove the asymptote floors $b_1$ and $\phi_1$.
 
 \paragraph{M5. Constrained Hill shape:} fix or tie the Hill shape exponents ($k=1$, $k$ shared, or hard-coded).
 
-\paragraph{M6. Immunity acts on infection duration:} the acquired level raises the clearance rate $r_A$, not only detectability.
+\paragraph{M6. Immunity acts on infection duration:} the acquired level raises the clearance rate for asymptomatic infection $r_A$, not only detectability. For example,
 
-\paragraph{M7. Saturating force of infection in EIR:} superinfection or a refractory cap.
+(incumbent):
 
-\paragraph{M8. Maternal immunity simplified:} bin-averaged integral replaced by a pointwise exponential, constants fixed, or the term dropped.
+$$r_A = \mathrm{constant}$$
 
-\paragraph{M9. Algebraic surface:} abandon the compartmental equilibrium for an algebraic age $\times$ EIR surface.
+(opus 11):
 
-\paragraph{M10. Biting profile rewritten:} rewrite the biting and exposure age profile $\psi$.
+$$r_A(a) = r_A^{0}\,\big(1 + r_{a1}(1 - h_d)\big), \qquad h_d = \frac{1}{1+(I_A/I_{D0})^{k_d}}$$
 
-\paragraph{M11. Non-constant immunity time-scale:} a durable plus recent component, or a decay that lengthens with cumulative exposure.
+\paragraph{M7. Saturating force of infection in EIR:} Impose a cap on force of infection relative to EIR. For example,
 
-\paragraph{M12. Recursion initialisation:} a half-interval birth value for the backward-Euler immunity level.
+(incumbent):
+
+$$\lambda = b\varepsilon$$
+
+(luna 4):
+
+$$\lambda = \frac{b\varepsilon}{1 + b\varepsilon/\lambda_{\max}}, \qquad \lambda_{\max} = 0.25\ \text{d}^{-1}$$
+
+\paragraph{M8. Maternal immunity simplified:} Either remove maternal immunity completely, or simplify its computation from a bin averaged integral to a pointwise exponential.
+
+\paragraph{M9. Algebraic surface:} completely replace the compartmental equilibrium for an expression relating age to EIR. For example, with age $a$ in years and annual EIR $\varepsilon$,
+
+(sol 12):
+
+$$\mathrm{prev}_m(a) = p_{\max}\,\frac{\varepsilon}{\varepsilon + \varepsilon_p}\,\Big(1 - e^{-(a/a_p)^{1.35}}\Big)\Big(\delta + \frac{1-\delta}{1+(a/11)^{1.6}}\Big)\,(1 - 0.55 f_T)$$
+
+$$\mathrm{inc}(a) = 10\,\kappa\,\frac{\varepsilon}{\varepsilon + \varepsilon_c}\,\big(1 - e^{-a/0.65}\big)\,e^{-a/\tau(\varepsilon)}, \qquad \tau(\varepsilon) = \frac{\tau_0}{1 + \sqrt{\varepsilon/\varepsilon_c}}$$
+
+for free parameters $\tau_0, \kappa, \varepsilon_c, p_{\max}, \varepsilon_p, a_p, \delta$.
+% Source: discovery remote/runs_agentic/07-codex-luna-sol-16/curves-griffin/proposals/0012-griffin.py
+%   (identical to the source fitted in 17-codex-luna-sol-16-pathfinder, index 12).
+%   Symbols: p_max=prev_max, eps_p=prev_e50, a_p=prev_rise, delta=prev_tail,
+%   kappa=inc_max_frac, eps_c=inc_e50, tau_0=inc_tau; all other constants are hard-coded.
+
+\paragraph{M10. Rewrite age dependent biting:} change the biting and exposure age profile ($\psi$).
+
+\paragraph{M11. Non-constant immunity decay:} change immunity decay based on exposure or a combination of decay lengths.
 
 \begin{table}
 \centering
