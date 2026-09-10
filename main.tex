@@ -8,6 +8,9 @@
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{xcolor}
+\newcommand{\better}[1]{\textcolor{green!50!black}{#1}}
+\newcommand{\worse}[1]{\textcolor{red!75!black}{#1}}
 \graphicspath{{figures/}}
 
 \begin{document}
@@ -142,39 +145,66 @@ We performed a sweep to search over all combinations of starting point and searc
 We found that a small minority of proposals produced simpler, more identifiable models, which were cheaper to fit, and with minimal degredation in predictive performance (incumbent immunity candidate 5, and incumbent curves candidate 8). Most proposals produced significantly worse predictions. Proposals which were started from scratch were the simplest (L-U parameters, and fit within L-U minutes), with generally worse predictive performance.
 
 \begin{table}
-\begin{tabular}{ll r r r r r r}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r r@{\,$\pm$\,}l r@{\,$\pm$\,}l r r r r}
 \toprule
-start & aperture & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & min & pars \\
+config & cand. & \multicolumn{2}{c}{$\Delta\mathrm{elpd}$} & \multicolumn{2}{c}{$\Delta\mathrm{elpd}_{\mathrm{train}}$} & min & pars &
+ESS$_{\mathrm{tail}}$ & unid. \\
 \midrule
-incumbent & immunity & 3 & -186.5 & -771.7 & 0.895 & 57.6 & 21 \\
-incumbent & curves & 0$^{\star}$ & -187.5 & -770.9 & 0.947 & 55.2 & 18 \\
-incumbent & immunity & 0$^{\star}$ & -187.5 & -770.9 & 0.947 & 55.4 & 18 \\
-incumbent & immunity & 5 & -189.9 & -786.4 & 0.947 & 37.5 & 14 \\
-incumbent & curves & 8 & -190.4 & -780.6 & 0.947 & 42.3 & 15 \\
-scratch & immunity & 4 & -199.5 & -1245.9 & 0.895 & 10.8 & 6 \\
-scratch & curves & 8 & -201.9 & -828.0 & 0.895 & 0.6 & 9 \\
-scratch & immunity & 2 & -203.9 & -1446.7 & 0.895 & 10.5 & 5 \\
-scratch & curves & 3 & -207.5 & -1226.6 & 0.947 & 0.3 & 6 \\
-scratch & curves & 0$^{\star}$ & -211.0 & -1712.1 & 1.000 & 0.2 & 3 \\
-scratch & immunity & 5 & -211.1 & -1668.9 & 0.895 & 9.5 & 7 \\
-scratch & curves & 6 & -213.1 & -1087.8 & 0.526 & 0.5 & 7 \\
-incumbent & curves & 1 & -213.6 & -1324.8 & 0.947 & 19.9 & 20 \\
-scratch & curves & 5 & -216.1 & -944.9 & 0.842 & 0.4 & 6 \\
-scratch & curves & 7 & -218.0 & -816.2 & 0.737 & 0.7 & 8 \\
-scratch & immunity & 0$^{\star}$ & -219.9 & -1731.2 & 0.895 & 7.7 & 3 \\
-scratch & curves & 2 & -222.9 & -1836.4 & 1.000 & 0.2 & 8 \\
+opus & 15 & -1.5 & 0.9 & +2.8 & 5.1 & 44.5 & 15 & 17 & 3 \\
+opus & 11 & +0.7 & 0.4 & +0.6 & 0.7 & 47.5 & 15 & 80 & 1 \\
+haiku & 6 & \worse{-1.0} & \worse{0.5} & +0.3 & 0.9 & 57.6 & 13 & 77 & 3 \\
+opus & 13 & -0.9 & 0.7 & +0.1 & 2.6 & 55.7 & 19 & 12 & 5 \\
+haiku & 2 & \worse{-2.0} & \worse{0.6} & 0.0 & 2.6 & 53.3 & 19 & 86 & 4 \\
+incumbent & 0$^{\star}$ & \multicolumn{2}{c}{---} & \multicolumn{2}{c}{---} & 56.4 & 18 & 80 & 4 \\
+luna & 5 & +0.7 & 0.4 & -0.2 & 0.8 & 54.9 & 20 & 41 & 6 \\
+opus & 10 & 0.0 & 0.3 & -0.5 & 0.7 & 56.2 & 21 & 46 & 5 \\
+inc/imm & 3 & +1.0 & 0.6 & -0.8 & 2.4 & 57.6 & 21 & 23 & 7 \\
+sol & 13 & +0.1 & 0.6 & -1.2 & 3.5 & 47.8 & 11 & 28 & 1 \\
+sol & 11 & \worse{-2.4} & \worse{0.5} & -1.9 & 2.0 & 50.5 & 16 & 13 & 4 \\
+haiku & 5 & \worse{-6.6} & \worse{1.0} & -2.1 & 8.4 & 53.1 & 14 & 26 & 5 \\
+haiku & 7 & \worse{-4.9} & \worse{1.1} & -4.1 & 8.2 & 30.9 & 15 & 14 & 2 \\
+luna & 8 & +0.7 & 0.8 & -4.7 & 3.4 & 51.0 & 18 & 74 & 4 \\
+luna & 4 & +0.8 & 0.7 & \worse{-8.5} & \worse{2.9} & 47.1 & 18 & 21 & 3 \\
+inc/cur & 8 & \worse{-2.9} & \worse{0.9} & \worse{-9.7} & \worse{3.1} & 42.3 & 15 & 108 & 3 \\
+inc/imm & 5 & \worse{-2.4} & \worse{1.0} & \worse{-15.4} & \worse{7.0} & 37.5 & 14 & 64 & 0 \\
+haiku & 8 & -2.2 & 1.1 & \worse{-22.0} & \worse{6.7} & 29.3 & 13 & 80 & 4 \\
+haiku & 4 & \better{+2.0} & \better{0.9} & \worse{-24.2} & \worse{6.6} & 29.8 & 17 & 164 & 5 \\
+sol & 9 & \worse{-8.8} & \worse{3.0} & \worse{-27.2} & \worse{11.1} & 27.0 & 6 & 27 & 0 \\
+scr/cur & 7 & \worse{-30.5} & \worse{5.0} & -45.3 & 23.7 & 0.7 & 8 & 68 & 1 \\
+luna & 1 & -2.8 & 1.6 & -47.6 & 38.5 & 49.7 & 18 & 133 & 1 \\
+scr/cur & 8 & \worse{-14.4} & \worse{2.7} & -57.0 & 31.7 & 0.6 & 9 & 16 & 0 \\
+sol & 12 & \worse{-6.0} & \worse{2.3} & \worse{-61.1} & \worse{23.1} & 0.3 & 7 & 144 & 0 \\
+sol & 16 & \worse{-11.9} & \worse{2.4} & -71.4 & 35.9 & 0.4 & 10 & 61 & 0 \\
+sol & 15 & \better{+2.7} & \better{1.3} & -97.3 & 60.0 & 57.5 & 7 & 195 & 1 \\
+sol & 10 & +1.9 & 2.0 & \worse{-99.3} & \worse{47.0} & 16.4 & 8 & 136 & 0 \\
+haiku & 3 & +3.2 & 2.7 & \worse{-131.0} & \worse{62.9} & 21.1 & 15 & 176 & 0 \\
+scr/cur & 5 & \worse{-28.6} & \worse{7.5} & \worse{-174.0} & \worse{76.8} & 0.4 & 6 & 165 & 0 \\
+haiku & 1 & \worse{-12.4} & \worse{2.3} & -183.0 & 170.9 & 57.6 & 13 & 62 & 1 \\
+sol & 14 & \worse{-6.4} & \worse{2.8} & \worse{-273.9} & \worse{129.8} & 0.3 & 8 & 93 & 1 \\
+scr/cur & 6 & \worse{-25.6} & \worse{6.6} & -316.8 & 199.1 & 0.5 & 7 & 203 & 0 \\
+scr/cur & 3 & \worse{-20.0} & \worse{7.8} & \worse{-455.6} & \worse{226.8} & 0.3 & 6 & 113 & 0 \\
+scr/imm & 4 & \worse{-12.0} & \worse{2.0} & -474.9 & 268.1 & 10.8 & 6 & 124 & 0 \\
+inc/cur & 1 & \worse{-26.1} & \worse{8.0} & \worse{-553.9} & \worse{256.3} & 19.9 & 20 & 48 & 7 \\
+scr/imm & 2 & \worse{-16.4} & \worse{5.1} & \worse{-675.8} & \worse{324.4} & 10.5 & 5 & 71 & 0 \\
+scr/imm & 5 & \worse{-23.6} & \worse{9.8} & \worse{-898.0} & \worse{383.4} & 9.5 & 7 & 140 & 0 \\
+scr/cur & 0$^{\star}$ & \worse{-23.5} & \worse{8.3} & \worse{-941.2} & \worse{453.9} & 0.2 & 3 & 186 & 0 \\
+scr/imm & 0$^{\star}$ & \worse{-32.4} & \worse{12.2} & \worse{-960.3} & \worse{386.6} & 7.7 & 3 & 194 & 0 \\
+scr/cur & 2 & \worse{-35.4} & \worse{10.3} & \worse{-1065.4} & \worse{482.3} & 0.2 & 8 & 34 & 2 \\
 \bottomrule
 \end{tabular}
-  \caption{Evaluation for models proposed by all local searches}
+  \caption{Evaluation of every proposal that compiled and fit, across the local searches (\emph{inc}/\emph{scr} starting point $\times$ \emph{cur}/\emph{imm} aperture) and the frontier searches (named by proposing model), ranked by training elpd. $\Delta$ columns are paired differences from the incumbent ($\mathrm{elpd} = -187.5$ over 35 held-out observations, $\mathrm{elpd}_{\mathrm{train}} = -770.9$ over 99 training observations) with the standard error of the paired difference; positive is better. Differences more than two standard errors from zero are coloured \better{green} where the proposal is better than the incumbent and \worse{red} where it is worse. $\star$ marks a starting model rather than a proposal; min is fitting time in minutes.}
   \label{tab:evaluation}
 \end{table}
 
 \section{Frontier model search}
 
-To investigate the gap between local models and the frontier, we also ran searches with Anthropic's Claude and OpenAI's ChatGPT, through the claude code and codex harnesses respectively. We searched from the incumbent starting point with the curves aperture, as it was the most promising configuration for mechanistic model search in the local search experiment. We tried two different model sizes for each model provider: Haiku 4.5 (\texttt{claude-haiku-4-5-20251001}) and Opus 5 (\texttt{claude-opus-5}) from Anthropic, and GPT-5.6 luna (\texttt{gpt-5.6-luna}) and GPT-5.6 sol (\texttt{gpt-5.6-sol}) from OpenAI. A major difference from the previous experiment is that we imposed a 15 minute time limit to restrict the costs for a search and make it acheivable with a base subscription, future work may wish to explore API billing to make this run comparable with the previous experiment. Each search consisted of 8 agents per model, giving 32 proposals which were fitted alongside the incumbent under the same pathfinder initialisation and the same three-study holdout as the local searches. Of the 32 proposals, 24 compiled and fit: 8 of 8 for Haiku, 4 of 8 for Opus, 4 of 8 for luna and 8 of 8 for sol. The results for this search are shown in Table \ref{tab:frontier_evaluation} and \ref{tab:frontier_mcmc}.
+To investigate the gap between local models and the frontier, we also ran searches with Anthropic's Claude and OpenAI's ChatGPT, through the claude code and codex harnesses respectively. We searched from the incumbent starting point with the curves aperture, as it was the most promising configuration for mechanistic model search in the local search experiment. We tried two different model sizes for each model provider: Haiku 4.5 (\texttt{claude-haiku-4-5-20251001}) and Opus 5 (\texttt{claude-opus-5}) from Anthropic, and GPT-5.6 luna (\texttt{gpt-5.6-luna}) and GPT-5.6 sol (\texttt{gpt-5.6-sol}) from OpenAI. A major difference from the previous experiment is that we imposed a 15 minute time limit to restrict the costs for a search and make it acheivable with a base subscription, future work may wish to explore API billing to make this run comparable with the previous experiment. Each search consisted of 8 agents per model, giving 32 proposals which were fitted alongside the incumbent under the same pathfinder initialisation and the same three-study holdout as the local searches. Of the 32 proposals, 24 compiled and fit: 8 of 8 for Haiku, 4 of 8 for Opus, 4 of 8 for luna and 8 of 8 for sol. The results for this search are shown alongside the local proposals in Table~\ref{tab:evaluation}.
 
 % Sources: discovery remote/runs_agentic, built by
-%   uv run python -m examples.malaria.frontier remote/runs_agentic --latex --table eval|mcmc
+%   uv run python -m examples.malaria.evaluation remote/runs_pathfinder/runs_pathfinder remote/runs_agentic --latex
 % Claude arm = runs_agentic/18-claude-haiku-opus-16-pathfinder (proposals combined from
 %   10-claude-haiku-8 and 11-claude-opus-8); codex arm = 17-codex-luna-sol-16-pathfinder
 %   (proposals combined from 03/04 = luna and 05/06 = sol).
@@ -186,42 +216,6 @@ To investigate the gap between local models and the frontier, we also ran search
 %   4 luna candidates still fail: 2, 3 and 7 did not fit within 3600s and 6 raised
 %   NameError on prior draws. If the write-up should say that the codex proposals needed a
 %   repair the claude ones did not, this is the place to say it.
-
-\begin{table}
-\begin{tabular}{ll r r r r r r}
-\toprule
-harness & model & cand. & $\mathrm{elpd}$ & $\mathrm{elpd}_{\mathrm{train}}$ & cover$_{90}$ & min & pars \\
-\midrule
-claude code & claude-haiku-4-5-20251001 & 3 & -184.3 & -901.9 & 1.000 & 21.1 & 15 \\
-codex & gpt-5.6-sol & 15 & -184.8 & -868.2 & 0.947 & 57.5 & 7 \\
-claude code & claude-haiku-4-5-20251001 & 4 & -185.5 & -795.1 & 0.947 & 29.8 & 17 \\
-codex & gpt-5.6-sol & 10 & -185.6 & -870.2 & 0.947 & 16.4 & 8 \\
-codex & gpt-5.6-luna & 4 & -186.7 & -779.5 & 0.895 & 47.1 & 18 \\
-codex & gpt-5.6-luna & 8 & -186.8 & -775.6 & 0.947 & 51.0 & 18 \\
-codex & gpt-5.6-luna & 5 & -186.8 & -771.1 & 0.947 & 54.9 & 20 \\
-claude code & claude-opus-5 & 11 & -186.8 & -770.3 & 0.947 & 47.5 & 15 \\
-codex & gpt-5.6-sol & 13 & -187.4 & -772.1 & 0.947 & 47.8 & 11 \\
-- & incumbent & 0$^{\star}$ & -187.5 & -770.9 & 0.947 & 56.4 & 18 \\
-claude code & claude-opus-5 & 10 & -187.6 & -771.5 & 0.947 & 56.2 & 21 \\
-claude code & claude-opus-5 & 13 & -188.4 & -770.8 & 0.947 & 55.7 & 19 \\
-claude code & claude-haiku-4-5-20251001 & 6 & -188.5 & -770.6 & 1.000 & 57.6 & 13 \\
-claude code & claude-opus-5 & 15 & -189.0 & -768.1 & 0.947 & 44.5 & 15 \\
-claude code & claude-haiku-4-5-20251001 & 2 & -189.5 & -770.9 & 0.947 & 53.3 & 19 \\
-claude code & claude-haiku-4-5-20251001 & 8 & -189.7 & -792.9 & 0.947 & 29.3 & 13 \\
-codex & gpt-5.6-sol & 11 & -189.9 & -772.8 & 0.947 & 50.5 & 16 \\
-codex & gpt-5.6-luna & 1 & -190.3 & -818.6 & 0.895 & 49.7 & 18 \\
-claude code & claude-haiku-4-5-20251001 & 7 & -192.4 & -775.0 & 0.947 & 30.9 & 15 \\
-codex & gpt-5.6-sol & 12 & -193.5 & -832.0 & 0.947 & 0.3 & 7 \\
-codex & gpt-5.6-sol & 14 & -193.9 & -1044.9 & 0.947 & 0.3 & 8 \\
-claude code & claude-haiku-4-5-20251001 & 5 & -194.2 & -773.0 & 0.947 & 53.1 & 14 \\
-codex & gpt-5.6-sol & 9 & -196.3 & -798.1 & 0.947 & 27.0 & 6 \\
-codex & gpt-5.6-sol & 16 & -199.4 & -842.4 & 0.895 & 0.4 & 10 \\
-claude code & claude-haiku-4-5-20251001 & 1 & -200.0 & -953.9 & 0.947 & 57.6 & 13 \\
-\bottomrule
-\end{tabular}
-  \caption{Evaluation for models proposed by the frontier searches, ranked as in Table~\ref{tab:evaluation}. $\star$ marks the incumbent the searches started from.}
-  \label{tab:frontier_evaluation}
-\end{table}
 
 Similarly to the local model search, proposed models were only preferable in terms of simplicity, MCMC diagnostics (sol 15, sol 10 and opus 11), and speed to fit (opus 11). No proposals were significantly more predictive, the largest paired improvement was $\Delta\mathrm{elpd} = 3.2 \pm 2.7$ (haiku 3).
 
@@ -300,7 +294,7 @@ M12 & sol 13
   & --- \\
 \bottomrule
 \end{tabular}
-  \caption{Structural motifs across all proposals, disaggregated by search; motifs are described in the text. Frontier candidates are named by the model that proposed them and indexed as in Table~\ref{tab:frontier_evaluation}; open candidates are named by their sweep cell (\emph{inc}/\emph{scr} for the incumbent and scratch starting points, \emph{cur}/\emph{imm} for the curves and immunity apertures) and indexed as in Table~\ref{tab:evaluation}. A proposal may carry more than one motif. $\dagger$ marks a proposal that did not compile and fit, and so has no row in either evaluation table. The frontier searches were run only at the incumbent start with the curves aperture, so M9 and M10 in the open arm are largely a consequence of the scratch seed, which supplies a flat algebraic mechanism and no compartments.}
+  \caption{Structural motifs across all proposals, disaggregated by search; motifs are described in the text. Candidates are named and indexed as in Table~\ref{tab:evaluation}: frontier candidates by the model that proposed them, open candidates by their sweep cell (\emph{inc}/\emph{scr} for the incumbent and scratch starting points, \emph{cur}/\emph{imm} for the curves and immunity apertures). A proposal may carry more than one motif. $\dagger$ marks a proposal that did not compile and fit, and so has no row in Table~\ref{tab:evaluation}. The frontier searches were run only at the incumbent start with the curves aperture, so M9 and M10 in the open arm are largely a consequence of the scratch seed, which supplies a flat algebraic mechanism and no compartments.}
   \label{tab:motifs}
 \end{table}
 
@@ -400,72 +394,6 @@ ud & 1.33 & 10 & 33 & 1.01 & 555 & 148 \\
   \caption{Trace plots for the core parameters of the NUTS fit over the sampling phase.}
   \label{trace_nuts}
 \end{figure}
-
-\begin{table}
-\begin{tabular}{ll r r r r r}
-\toprule
-start & aperture & cand. & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. \\
-\midrule
-incumbent & immunity & 3 & 7 & 1.11 & 23 & 0 \\
-incumbent & curves & 0$^{\star}$ & 4 & 1.03 & 80 & 0 \\
-incumbent & immunity & 0$^{\star}$ & 4 & 1.03 & 80 & 0 \\
-incumbent & immunity & 5 & 0 & 1.06 & 64 & 0 \\
-incumbent & curves & 8 & 3 & 1.17 & 108 & 0 \\
-scratch & immunity & 4 & 0 & 1.01 & 124 & 0 \\
-scratch & curves & 8 & 0 & 1.43 & 16 & 19 \\
-scratch & immunity & 2 & 0 & 1.02 & 71 & 0 \\
-scratch & curves & 3 & 0 & 1.01 & 113 & 0 \\
-scratch & curves & 0$^{\star}$ & 0 & 1.01 & 186 & 0 \\
-scratch & immunity & 5 & 0 & 1.02 & 140 & 0 \\
-scratch & curves & 6 & 0 & 1.02 & 203 & 0 \\
-incumbent & curves & 1 & 7 & 1.82 & 48 & 0 \\
-scratch & curves & 5 & 0 & 1.02 & 165 & 0 \\
-scratch & curves & 7 & 1 & 1.04 & 68 & 0 \\
-scratch & immunity & 0$^{\star}$ & 0 & 1.01 & 194 & 0 \\
-scratch & curves & 2 & 2 & 1.03 & 34 & 0 \\
-\bottomrule
-\end{tabular}
-  \caption{MCMC fitting diagnostics for models proposed by all local searches, ordered as in Table~\ref{tab:evaluation}}
-  \label{tab:mcmc}
-\end{table}
-
-
-\begin{table}
-\begin{tabular}{ll r r r r r}
-\toprule
-harness & model & cand. & unid. & $\hat{R}$ & ESS$_{\mathrm{tail}}$ & div. \\
-\midrule
-claude code & claude-haiku-4-5-20251001 & 3 & 0 & 1.01 & 176 & 0 \\
-codex & gpt-5.6-sol & 15 & 1 & 1.02 & 195 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 4 & 5 & 1.04 & 164 & 0 \\
-codex & gpt-5.6-sol & 10 & 0 & 1.03 & 136 & 0 \\
-codex & gpt-5.6-luna & 4 & 3 & 1.07 & 21 & 0 \\
-codex & gpt-5.6-luna & 8 & 4 & 1.80 & 74 & 0 \\
-codex & gpt-5.6-luna & 5 & 6 & 1.15 & 41 & 0 \\
-claude code & claude-opus-5 & 11 & 1 & 1.05 & 80 & 0 \\
-codex & gpt-5.6-sol & 13 & 1 & 2.48 & 28 & 0 \\
-- & incumbent & 0$^{\star}$ & 4 & 1.03 & 80 & 0 \\
-claude code & claude-opus-5 & 10 & 5 & 1.47 & 46 & 0 \\
-claude code & claude-opus-5 & 13 & 5 & 1.30 & 12 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 6 & 3 & 1.07 & 77 & 0 \\
-claude code & claude-opus-5 & 15 & 3 & 2.76 & 17 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 2 & 4 & 1.02 & 86 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 8 & 4 & 1.04 & 80 & 0 \\
-codex & gpt-5.6-sol & 11 & 4 & 1.80 & 13 & 0 \\
-codex & gpt-5.6-luna & 1 & 1 & 1.11 & 133 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 7 & 2 & 4.55 & 14 & 7 \\
-codex & gpt-5.6-sol & 12 & 0 & 1.03 & 144 & 0 \\
-codex & gpt-5.6-sol & 14 & 1 & 1.06 & 93 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 5 & 5 & 1.14 & 26 & 0 \\
-codex & gpt-5.6-sol & 9 & 0 & 3.44 & 27 & 0 \\
-codex & gpt-5.6-sol & 16 & 0 & 1.07 & 61 & 0 \\
-claude code & claude-haiku-4-5-20251001 & 1 & 1 & 1.09 & 62 & 0 \\
-\bottomrule
-\end{tabular}
-  \caption{MCMC fitting diagnostics for models proposed by the frontier searches, ordered as in Table~\ref{tab:frontier_evaluation}}
-  \label{tab:frontier_mcmc}
-\end{table}
-
 
 \bibliographystyle{plainnat}
 \bibliography{bib}
