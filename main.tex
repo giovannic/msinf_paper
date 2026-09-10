@@ -333,19 +333,22 @@ M11 & luna 5
 \cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12}
 motif & n & with & w/o & with & w/o & with & w/o & with & w/o & with & w/o \\
 \midrule
-M1 consolidation & 8 & 80 & 54 & 37.1 & 50.1 & -794.0 & -775.3 & -187.7 & -189.7 & 2.0 & 2.5 \\
-M2 age maturation & 6 & 34 & 78 & 50.4 & 39.2 & -773.5 & -794.0 & -188.0 & -189.6 & 3.5 & 1.0 \\
-M3 $f_d$ simplified & 8 & 44 & 77 & 53.2 & 30.4 & -770.8 & -796.6 & -189.2 & -187.5 & 3.5 & 1.0 \\
-M4 no floors & 5 & 62 & 74 & 30.9 & 47.8 & -792.9 & -775.6 & -192.4 & -188.4 & 4.0 & 1.0 \\
-M5 fixed exponents & 6 & 54 & 68 & 30.1 & 50.8 & -784.0 & -777.5 & -188.2 & -189.0 & 1.5 & 3.0 \\
-M7 foi cap & 2 & 108 & 68 & 52.3 & 47.6 & -823.9 & -775.3 & -185.8 & -189.2 & 2.0 & 2.5 \\
-M8 maternal & 4 & 99 & 68 & 42.2 & 47.6 & -869.2 & -774.0 & -190.9 & -188.8 & 0.5 & 3.0 \\
-M9 phenom.\ curves & 3 & 93 & 62 & 0.3 & 49.7 & -842.4 & -775.0 & -193.9 & -188.4 & 0.0 & 3.0 \\
+M1 consolidation & 13 & 80 & 62 & 29.3 & 44.7 & -798.1 & -798.4 & -189.7 & -191.4 & 1.0 & 1.5 \\
+M2 $\phi$ damping & 8 & 47 & 77 & 48.4 & 29.3 & -777.5 & -816.2 & -188.7 & -192.4 & 3.5 & 1.0 \\
+M3 $f_d$ simplified & 10 & 63 & 74 & 51.8 & 19.9 & -771.9 & -832.0 & -189.7 & -193.5 & 3.0 & 1.0 \\
+M4 no floors & 6 & 63 & 74 & 34.2 & 27.0 & -789.6 & -818.6 & -191.1 & -190.3 & 3.0 & 1.0 \\
+M5 fixed exponents & 6 & 54 & 71 & 30.1 & 37.5 & -783.9 & -816.2 & -188.2 & -193.5 & 1.5 & 1.0 \\
+M6 duration & 2 & 141 & 68 & 24.0 & 30.9 & -929.1 & -798.1 & -200.0 & -190.3 & 0.5 & 1.0 \\
+M7 foi cap & 3 & 21 & 72 & 47.1 & 30.4 & -828.0 & -796.6 & -186.7 & -190.4 & 1.0 & 1.0 \\
+M8 maternal & 9 & 71 & 71 & 19.9 & 43.4 & -953.9 & -780.1 & -199.5 & -189.8 & 0.0 & 2.5 \\
+M9 algebraic & 9 & 93 & 67 & 0.4 & 47.3 & -944.9 & -780.1 & -207.5 & -189.3 & 0.0 & 3.0 \\
+M10 $\psi$ & 7 & 68 & 72 & 0.4 & 45.8 & -944.9 & -783.5 & -213.1 & -189.6 & 0.0 & 2.5 \\
+M11 decay & 4 & 44 & 74 & 37.4 & 30.9 & -929.7 & -798.1 & -200.0 & -190.3 & 6.5 & 1.0 \\
 \midrule
 \multicolumn{2}{l}{incumbent} & \multicolumn{2}{c}{80} & \multicolumn{2}{c}{56.4} & \multicolumn{2}{c}{-770.9} & \multicolumn{2}{c}{-187.5} & \multicolumn{2}{c}{4} \\
 \bottomrule
 \end{tabular}
-  \caption{Sensitivity of sampling and predictive diagnostics to structural motifs, over the 24 frontier candidates that compiled and fit. Each cell is the median over the candidates that carry the motif and over those that do not; motifs carried by fewer than two fitted candidates (M6, M10, M11, M12) are omitted, and the incumbent is shown as a baseline rather than as a row. Candidates carry 2.1 motifs on average and no motif is randomised against the others, so these are contrasts and not estimated effects. Fitting time is right-censored at the 3600\,s fit timeout, with fifteen of the twenty-four candidates between 44 and 58 minutes, and ESS$_{\mathrm{tail}}$ is not a reliable summary for the eleven candidates whose chains did not mix ($\hat{R} > 1.1$), for which unid.\ is the better read. Across all twenty-four candidates the rank correlation between $\mathrm{elpd}_{\mathrm{train}}$ and $\mathrm{elpd}$ is 0.14, between $\mathrm{elpd}_{\mathrm{train}}$ and the parameter count 0.58, and between $\mathrm{elpd}_{\mathrm{train}}$ and ESS$_{\mathrm{tail}}$ $-0.53$.}
+  \caption{Sensitivity of sampling and predictive diagnostics to structural motifs, over the 37 proposals that compiled and fit: 24 from the frontier searches and 13 from the local searches. Each cell is the median over the proposals that carry the motif and over those that do not; the incumbent and the two scratch seeds are not proposals and are excluded, and the incumbent is shown as a baseline rather than as a row. Proposals carry 2.1 motifs on average and no motif is randomised against the others, so these are contrasts and not estimated effects. In particular, six of the nine M9 proposals and six of the seven M10 proposals come from the scratch/curves search, so those rows largely contrast that search with the rest. Fitting time is right-censored at the 3600\,s fit timeout, with sixteen of the thirty-seven proposals between 44 and 58 minutes, and ESS$_{\mathrm{tail}}$ is not a reliable summary for the fifteen proposals whose chains did not mix ($\hat{R} > 1.1$; eleven frontier, four local), for which unid.\ is the better read. Across all thirty-seven proposals the rank correlation between $\mathrm{elpd}_{\mathrm{train}}$ and $\mathrm{elpd}$ is 0.60, between $\mathrm{elpd}_{\mathrm{train}}$ and the parameter count 0.65, and between $\mathrm{elpd}_{\mathrm{train}}$ and ESS$_{\mathrm{tail}}$ $-0.48$.}
   \label{tab:motif_sensitivity}
 \end{table}
 
