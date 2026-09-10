@@ -142,7 +142,8 @@ The \emph{Immunity} aperture specifies a narrower search where sub-models are co
 
 We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents drawn from Qwen3.5-122B-A10B-FP8 at temperature 1.0, with max\_tokens=32768, thinking\_tokens=2048 and a budget of 50 tool calls per agent, resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit.
 
-We found that a small minority of proposals produced simpler, more identifiable models, which were cheaper to fit, and with minimal degredation in predictive performance (incumbent immunity candidate 5, and incumbent curves candidate 8). Most proposals produced significantly worse predictions. Proposals which were started from scratch were the simplest (L-U parameters, and fit within L-U minutes), with generally worse predictive performance.
+% TODO: No longer true
+We found that a small minority of proposals produced simpler, more identifiable models, which were cheaper to fit, and with no significant degredation in predictive performance (incumbent immunity candidate 5, and incumbent curves candidate 8). Most proposals produced significantly worse predictions. Proposals which were started from scratch were the simplest (L-U parameters, and fit within L-U minutes), with generally worse predictive performance.
 
 \begin{table}
 \centering
@@ -275,6 +276,72 @@ for free parameters $\tau_0, \kappa, \varepsilon_c, p_{\max}, \varepsilon_p, a_p
 
 \paragraph{M11. Non-constant immunity decay:} change immunity decay based on exposure or a combination of decay lengths.
 
+\section{Discussion}
+
+We have presented an evaluation harness and baseline for malaria transmission model search. This step allows researchers to quantitatively explore the modelling space with respect to model likelihood (through ELPD) and computational requirements for fitting (through MCMC statistics).
+
+The current search results suggest that there is potential to simplify the incumbent model and improve fitting, without impacting predictive performance. It remains to be seen if preditive accuracy can be improved.
+
+There is a big performance gap between the open source models (and custom harness) used in this study and the frontier models (with frontier coding harnesses). Of the open source model proposals, less than half compiled and fit (compared to $\frac{3}{4}$ frontier proposals).
+
+These early results also suggest that human judgement is still required to discern which models to deploy, many proposals make structural changes to the model which result in no significant change in predictive performance. In the absence of more data to discern true mechanisms, humans must validate that the proposed mechanisms are at least consistent with our best understanding of malaria transmission.
+
+\subsection{Future work}
+
+% Reorient the search (start with the encumbent fits, direct towards examples of misspecification, more comparable search - opencode, use more elaborate search techniques).
+
+% Lift compute constraints (larger open models, more time with frontier models, more tool calls, subagents).
+
+% More data (higher ages, realistic demographics, information extraction)
+
+% Other models
+
+\bibliographystyle{plainnat}
+\bibliography{bib}
+
+\appendix
+
+\section{MCMC convergence diagnostics}
+\label{mcmc}
+
+Table \ref{tab:convergence} reports per-parameter convergence diagnostics for the two baseline fits of the \citet{griffin_estimates_2014} model. Both were run with four chains over the same observational table and the same priors; SA was given 1000 warmup and 1000 sampling iterations per chain, NUTS 100 and 100.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{l r r r r r r}
+\toprule
+& \multicolumn{3}{c}{SA} & \multicolumn{3}{c}{NUTS} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+parameter & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ \\
+\midrule
+ad0 & 1.19 & 15 & 206 & 1.02 & 236 & 248 \\
+b0 & 1.17 & 16 & 87 & 1.02 & 147 & 202 \\
+d1 & 1.11 & 24 & 188 & 1.01 & 779 & 186 \\
+dm & 1.02 & 442 & 495 & 1.03 & 121 & 306 \\
+fd0 & 1.34 & 9 & 50 & 1.00 & 430 & 214 \\
+gd & 1.12 & 22 & 151 & 1.04 & 371 & 241 \\
+IB0 & 1.33 & 10 & 41 & 1.02 & 197 & 258 \\
+IC0 & 1.17 & 16 & 45 & 1.01 & 131 & 151 \\
+ID0 & 1.43 & 8 & 32 & 1.00 & 236 & 267 \\
+kb & 1.07 & 36 & 646 & 1.03 & 194 & 180 \\
+kc & 1.07 & 38 & 162 & 1.02 & 197 & 231 \\
+kd & 1.11 & 23 & 242 & 1.00 & 457 & 309 \\
+phi0 & 1.25 & 12 & 51 & 1.01 & 335 & 275 \\
+phi1 & 1.03 & 94 & 209 & 1.02 & 255 & 209 \\
+PM & 1.08 & 32 & 133 & 1.03 & 99 & 166 \\
+ub & 1.31 & 10 & 59 & 1.04 & 104 & 132 \\
+uc & 1.05 & 69 & 230 & 1.00 & 148 & 88 \\
+ud & 1.33 & 10 & 33 & 1.01 & 555 & 148 \\
+\bottomrule
+\end{tabular}
+  \caption{Per-parameter convergence diagnostics for the SA and NUTS baseline fits. SA fails to reach $\hat{r} < 1.1$ on eleven of the eighteen core parameters despite ten times the sampling budget.}
+  \label{tab:convergence}
+\end{table}
+
+\section{Structural motifs}
+
+Tables \ref{tab:motifs} and \ref{tab:motif_sensitivity} show the attribution of motifs to proposals and sensitivity metrics for our evaluation metrics.
+
 \begin{table}
 \centering
 \small
@@ -352,77 +419,7 @@ M11 decay & 4 & 44 & 74 & 37.4 & 30.9 & -929.7 & -798.1 & -200.0 & -190.3 & 6.5 
   \label{tab:motif_sensitivity}
 \end{table}
 
-% diversity
-% all arms were diverse except for scratch/imm
 
-\section{Discussion}
-
-\section{Future work}
-
-% Other malaria models
-
-% More data (higher ages, information extraction)
-
-% Seasonality
-
-% Compare to sophisticated search algorithms
-
-\appendix
-
-\section{MCMC convergence diagnostics}
-\label{mcmc}
-
-Table \ref{tab:convergence} reports per-parameter convergence diagnostics for the two baseline fits of the \citet{griffin_estimates_2014} model. Both were run with four chains over the same observational table and the same priors; SA was given 1000 warmup and 1000 sampling iterations per chain, NUTS 100 and 100. Trace plots for the sampling phase are shown in Figures \ref{trace_sa} and \ref{trace_nuts}.
-
-\begin{table}
-\centering
-\begin{tabular}{l r r r r r r}
-\toprule
-& \multicolumn{3}{c}{SA} & \multicolumn{3}{c}{NUTS} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7}
-parameter & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ & $\hat{r}$ & ESS$_{\mathrm{bulk}}$ & ESS$_{\mathrm{tail}}$ \\
-\midrule
-ad0 & 1.19 & 15 & 206 & 1.02 & 236 & 248 \\
-b0 & 1.17 & 16 & 87 & 1.02 & 147 & 202 \\
-d1 & 1.11 & 24 & 188 & 1.01 & 779 & 186 \\
-dm & 1.02 & 442 & 495 & 1.03 & 121 & 306 \\
-fd0 & 1.34 & 9 & 50 & 1.00 & 430 & 214 \\
-gd & 1.12 & 22 & 151 & 1.04 & 371 & 241 \\
-IB0 & 1.33 & 10 & 41 & 1.02 & 197 & 258 \\
-IC0 & 1.17 & 16 & 45 & 1.01 & 131 & 151 \\
-ID0 & 1.43 & 8 & 32 & 1.00 & 236 & 267 \\
-kb & 1.07 & 36 & 646 & 1.03 & 194 & 180 \\
-kc & 1.07 & 38 & 162 & 1.02 & 197 & 231 \\
-kd & 1.11 & 23 & 242 & 1.00 & 457 & 309 \\
-phi0 & 1.25 & 12 & 51 & 1.01 & 335 & 275 \\
-phi1 & 1.03 & 94 & 209 & 1.02 & 255 & 209 \\
-PM & 1.08 & 32 & 133 & 1.03 & 99 & 166 \\
-ub & 1.31 & 10 & 59 & 1.04 & 104 & 132 \\
-uc & 1.05 & 69 & 230 & 1.00 & 148 & 88 \\
-ud & 1.33 & 10 & 33 & 1.01 & 555 & 148 \\
-\bottomrule
-\end{tabular}
-  \caption{Per-parameter convergence diagnostics for the SA and NUTS baseline fits. SA fails to reach $\hat{r} < 1.1$ on eleven of the eighteen core parameters despite ten times the sampling budget.}
-  \label{tab:convergence}
-\end{table}
-
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\textwidth]{trace_sa.png}
-  \caption{Trace plots for the core parameters of the SA fit over the sampling phase.}
-  \label{trace_sa}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\textwidth]{trace_nuts.png}
-  \caption{Trace plots for the core parameters of the NUTS fit over the sampling phase.}
-  \label{trace_nuts}
-\end{figure}
-
-\bibliographystyle{plainnat}
-\bibliography{bib}
 
 \end{document}
 
