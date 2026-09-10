@@ -223,7 +223,7 @@ claude code & claude-haiku-4-5-20251001 & 1 & -200.0 & -953.9 & 0.947 & 57.6 & 1
   \label{tab:frontier_evaluation}
 \end{table}
 
-Similarly to the local model search, proposed models were only preferable in terms of simplicity, MCMC diagnostics and speed to fit (sol candidate 15, sol candidate 10 and opus candidate 11). No proposals were significantly more predictive. There was no favoured model for predictive performance (spearmans = ...).
+Similarly to the local model search, proposed models were only preferable in terms of simplicity, MCMC diagnostics (sol 15, sol 10 and opus 11), and speed to fit (opus 11). No proposals were significantly more predictive, the largest paired improvement was $\Delta\mathrm{elpd} = 3.2 \pm 2.7$ (haiku 3).
 
 From a cost perspective, Claude based proposals required 2.3 times as many tokens as ChatGPT-based agents ($17.6 \pm 7.4$k vs $7.5 \pm 1.9$k), and took 1.17 times as long ($3.45 \pm 1.06$ vs $2.96 \pm 0.81$ minutes). Neither of the agents came close to using their 15 minute limit. Haiku agents made twice as many tool calls as any other model ($20.1 \pm 7.6$, against $10.4 \pm 3.0$ for luna, $10.8 \pm 3.2$ for sol and $11.0 \pm 1.4$ for the Opus agents that ran to completion), and generated nearly three times the output tokens of either codex model ($21.6 \pm 8.2$k vs $7.5$k). At list prices, the 16 Claude agents cost \$8.06 in total ($\$0.50 \pm 0.32$ per agent), no costs were recorded for ChatGPT agents.
 
