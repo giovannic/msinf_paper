@@ -75,11 +75,24 @@ MCMC traces were then evaluated on a range of common metrics for prediction qual
 
 \subsection{Model search}
 
-To orchestrate the model search, we built Discovery. Discovery collects the search context, including a brief, the starting point and search objective into a prompt for the agent. It also, constructs an isolated temporary directory with observational and supporting data for the agent to analyse through a tool calling interface. To interface with the underlying model, Discovery supports either an OpenAI compatible URL, or execution of a headless coding harness (Claude Code or Codex) in a subprocess. For the open weight experiments, we launched a vLLM server with Qwen 3.6 112B (is that right?) \citep{qwen}. For the frontier experiments we launched Claude Code and Codex with Pro subscriptions. After the agents have made their proposals, Discovery extracts, filters and evaluates them. To save computation, we filter proposals by (...). The remaining proposals are then fit using NUTS with Pathfinder initialisation and evaluated using the same metrics outlined above.
+To orchestrate the model search, we built Discovery. Discovery collects the search context, including a brief, the starting point and search objective into a prompt for the agent. It also, constructs an isolated temporary directory with observational and supporting data for the agent to analyse through a tool calling interface.
+
+To interface with the underlying model, Discovery supports either an OpenAI compatible URL, or execution of a headless coding harness (Claude Code or Codex) in a subprocess. For the open weight experiments, we launched a vLLM server with Qwen3.5-122B-A10B-FP8 \citep{qwen}. For the frontier experiments we launched Claude Code and Codex with Pro subscriptions.
+
+After the agents have made their proposals, Discovery extracts, filters and evaluates them. To save computation, we filter a proposal if:
+\begin{enumerate}
+    \item it raises an error, or its prevalence or incidence is not finite at any probed point;
+    \item prevalence leaves $[0, 1]$;
+    \item clinical incidence leaves $[0, 20]$ episodes per person-year, a generous bound given that the highest observed incidence is well under 5;
+    \item prevalence in 2-10 year olds, weighted by the demography and averaged over prior draws, increases by less than 0.02 from the lowest to the highest EIR;
+    \item it gives different results (relative tolerance $10^{-9}$) when run on the JAX and NumPy array backends of dmeq.
+\end{enumerate}
+
+Proposals declaring more than 200 parameters are also rejected, and fits which do not finish within 60 minutes are terminated. The remaining proposals are then fit using NUTS with Pathfinder initialisation and evaluated using the same metrics outlined above.
 
 \section{Analysis of the baseline model fit}
 
-Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin_estimates_2014}. We found that differentiable MCMC produced more reliable estimates which alter the previous posterior, gaps in predictive performance are a result of mis-specification rather than mis-sampling, and incorporating realistic demographics and observational data at higher ages futher update the posterior.
+Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin_estimates_2014}. We found that the NUTS sampler produced more reliable estimates and slightly alter the previous posterior. The remaining gaps in predictive performance appear to be a result of misspecification rather than missampling.
 
 \paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin_estimates_2014} with poor convergence diagnostics (worst-case $\hat{r}$=1.43, minimum bulk ESS=8), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics (worst-case $\hat{r}$=1.04, minimum bulk ESS=99) - see Appendix \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS chains also reached a higher log posterior density (... vs ...), indicating that the SA sample had not settled in the dominant posterior mode.
 
@@ -302,7 +315,7 @@ LLM-based methods are sensitive to prompt optimisation, which has been unexplore
 
 The effect of the agent harness and underlying model has not yet been disentangled. Discovery, the custom harness developed for the open weight models, is a rudimentary prototype and does not compare with Claude Code or Codex in terms of functionality. One should investigate a fully featured harness which supports any model, such as OpenCode \citep{OpenCode}, to put them on a level playing field and remove any barriers introduced by a poorly defined interface.
 
-A careful scale up of resources alongside search improvements could lead to progress on the predictive performance. The open weight model (Qwen 3.6) was run on a single HPC node with four L40s. There have since been many releases of more performant and larger models which could be executed with a multi-node set up. The frontier models were restricted to 15 minutes, and inference time scaling is known to greatly improve response quality and has been extended to the order of days. However, most of the proposals in this study exhibited worse predictive performance than the incumbent, and therefore care is needed to avoid wasting computationally expensive MCMC fits on unlikely trajectories.
+A careful scale up of resources alongside search improvements could lead to progress on the predictive performance. The open weight model (Qwen3.5-122B-A10B-FP8) was run on a single HPC node with four L40s. There have since been many releases of more performant and larger models which could be executed with a multi-node set up. The frontier models were restricted to 15 minutes, and inference time scaling is known to greatly improve response quality and has been extended to the order of days. However, most of the proposals in this study exhibited worse predictive performance than the incumbent, and therefore care is needed to avoid wasting computationally expensive MCMC fits on unlikely trajectories.
 
 The underlying data used in this study is limited and should be extended. For consistency with previous fits, we omitted observations in subjects which were older than 20 years old and assumed an exponential mortality rate. Observations in older subjects would confirm or rule out mechanisms through emergent behaviours which only appear on longer time scales. More realistic demographics can be simulated from WorldPop data, and is currently supported by dmeq. Much more paired prevalence and incidence data across age groups has since been collected and standardised. With the help of agents, one can extend the evaluation data set with new points which reasonably control for interventions, seasonality and other covariates in order to reduce the variance of ELPD.
 
