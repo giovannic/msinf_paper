@@ -25,10 +25,10 @@
 \subsection{Malaria transmission modelling}
 
 % The complexity, immunity, drugs, vectors
-Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multi-phase lifecycle of the Plasmodium parasite and its multiple interactions the human immune system and the non-linear effects of Force of Infection on malaria burden at different ages.
+Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multi-phase lifecycle of the Plasmodium parasite, its multiple interactions the human immune system, and the non-linear effects of Force of Infection on malaria burden at different ages.
 
 % The data: prevalence, incidence, EIR
-Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data. From \citet{thesis}:
+Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data. From \citet{Charles2024Sep}:
 
 \begin{thesisquote}
 \begin{description}
@@ -40,7 +40,7 @@ Moreover, the available data is generally high variance and sparse, due to low s
 \end{description}
 \end{thesisquote}
 
-All of these metrics are heavily influenced by the vectorial capacity, the rate of contact between infectious mosquitoes and susceptible humans. However, a myriad of confounding factors, such as demographics, seasonality, human habitats, land use, diagnostic methods and wider malaria controls can obscure their precise relationship. Understanding these relationships are essential for predicting and mitigating malaria burden, and so have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
+Understanding the relationships between EIR, prevalence and incidence are essential for predicting and mitigating malaria burden, and have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
 
 \paragraph{The baseline transmission model.} In \citet{griffin_estimates_2014}, human transmission is disaggregated into age and heterogeneity compartments. The average age and heterogeneity of biting rates. The force of infection for each compartment is influenced by the age group - with adults experiencing more bites - and heterogeneity group. Immunity levels is accrued on each exposure to malaria. Immunity types are divided into pre-erythrocytic, acquired clinical immunity, maternal clinical immunity and immunity to detection by microscopy. The probability of clinical, asymptomatic and subpatent infection for each compartment is derived from latent force of infection and immunity levels. Taken at equilibrium, this transmission offers a closed-form solution for incidence and prevalence across age compartments for a given Entomological Inoculation Rate (EIR). The full model is presented in the Appendix \ref{section:equilibrium}.
 
