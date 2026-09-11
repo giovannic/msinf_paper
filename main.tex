@@ -103,14 +103,7 @@ Here we present our findings in re-creating the malaria transmission model fits 
   \label{immunity}
 \end{figure}
 
-\paragraph{Posterior predictive.} The NUTS posterior also fit the data better than SA (paired in-sample ELPD difference $36.3 \pm 14.0$ in favour of NUTS; incidence $26.1 \pm 13.2$, prevalence $10.1 \pm 4.6$), so the shift away from the \citet{griffin_estimates_2014} estimates is not bought at the cost of fit. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\textwidth]{predictive_incidence.png}
-  \caption{Site-faceted posterior predictive overlays for the NUTS fit. Observed clinical incidence against predicted observed-scale incidence rates.}
-  \label{predictive}
-\end{figure}
+\paragraph{Posterior predictive.} The NUTS posterior also fit the data better than SA (paired in-sample ELPD difference $36.3 \pm 14.0$ in favour of NUTS; incidence $26.1 \pm 13.2$, prevalence $10.1 \pm 4.6$. The change in posterior estimate leads to a kink in the decay of incidence with age, illustrated in Figure \ref{griffin_predictive}. However, when we inspect the posterior predictive overlayed onto observations, the same signs of mis-specification appear in many studies, especially the underprediction in Ndiop, Senegal and overprediction in Chonyi, Kenya, see Figure \ref{predictive}.
 
 \begin{figure}
   \centering
@@ -119,7 +112,14 @@ Here we present our findings in re-creating the malaria transmission model fits 
   \label{griffin_predictive}
 \end{figure}
 
-\paragraph{Sensitivity to initialisation.} NUTS failed to converge when initialised to the median of the prior. NUTS sampling exhibits long step times, which is indicative of a deep binary tree which struggles to navigate the posterior geometry. Moreover, the trace shows that estimates of phi1, log\_eir and ft\_study struggle to converge when initialised using the prior, see Section \ref{init} for init diagnostics. When initialised to the median estimate from the posterior provided by \citet{griffin_estimates_2014}, NUTS was able to converge.
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{predictive_incidence.png}
+  \caption{Site-faceted posterior predictive overlays for the NUTS fit. Observed clinical incidence against predicted observed-scale incidence rates.}
+  \label{predictive}
+\end{figure}
+
+\paragraph{Sensitivity to initialisation.} NUTS failed to converge when initialised to the median of the prior. NUTS sampling exhibits long step times, which is indicative of a deep binary tree which struggles to navigate the posterior geometry. However, when initialised to the median estimate of the posterior provided by \citet{griffin_estimates_2014}, NUTS was able to converge.
 
 To remediate sensitivity to initialisation for arbitrary model variants, for which we will not have prior knowledge of good initialisation values, we implemented Pathfinder initialisation. We found that it led to comparable convergence diagnostics to when initialised with the previous posterior (worst-case $\hat{r}$ = 1.03 vs $\hat{r}$ = 1.04), at a cost of 79 seconds of Pathfinder fitting before sampling begins.
 % Sources: Pathfinder = discovery runs_agentic/09-incumbent-pathfinder-100-100-2h
@@ -134,37 +134,45 @@ To remediate sensitivity to initialisation for arbitrary model variants, for whi
 % To state either claim cleanly, run msinf's own init sweep: conf/config.yaml already
 % defines arms: [griffin, median, pathfinder, fullrank].
 
-\paragraph{Realistic demographics and adult data} Align the baseline with a more realistic calibration scenario, we simulated demographics from WorldPop \citep{Tatem2017Jan} and included observational data from participants greater than 20 years old. WorldPop data was extracted for each site at the year of observation, the equilibrium age populations were then computed from the extracted mortality rates. We then included incidence and prevalence observations from the original published studies, with participating ages as high as 80 years old. The updated fits are shown in Figure \ref{incumbent}.
-
-% TODO: the adult data half of this paragraph is not yet run. Every fit to date
-% uses study_data_2014_age_le20.csv, i.e. observations are truncated at 20 years.
-% The WorldPop demography is done (msinf runs 2026-08-14/17-04-12 and 17-04-15,
-% via data.mortality_csv=artifacts/demography/site_mortality_griffin_grid.csv),
-% but both of those are also age_le20 and neither has a diagnostics bundle yet.
-% Needed: (a) diagnostics over 17-04-12/17-04-15 to produce Figure \ref{incumbent},
-% (b) a refit against the all-ages table before the ">20 years old" and
-% "as high as 80 years old" claims above can stand.
-
 \section{Local model search}
 
 After establishing our baseline and evaluation metrics, we conducted various searches to see alternative models compare.
 
 \paragraph{Starting point}
 
-One non-obvious search parameter is whether to start the search from \emph{scratch} or from the \emph{incumbent} model. To start from \emph{scratch} practically means to present a deliberately low performing, trivial model to demonstrate the function signature to the model. The benefit of this approach is that there is less steering and the search is more likely to explore new ground. To start from the \emph{incumbent} model is to provide it to the model proposer at the start of the search, akin to a model correction set up. The benefit of this approach is that the model can start from a more complex point, benefitting from prior research into the modelling problem and produce models which are more interpretable to those familiar with the existing model.
+It was unclear whether search would be best started from \emph{scratch} or from the \emph{incumbent} model. To start from \emph{scratch}, we provided agents with low performing, trivial model to demonstrate the function signature of the target model. The benefit of this approach is that there is less steering and the search is more likely to explore new ground. To start from the \emph{incumbent} model we provided agents with the dmeq source code at the start of the search, a model correction set up. The benefit of this approach is that the model can start from a more complex starting point, benefitting from prior research into the modelling problem and produce models which are more interpretable to those familiar with the existing formulation.
 
 \paragraph{Search aperture}
 
-An orthogonal parameter is the search aperture, specifying the editable parts of the model code, and thereby restricting the scope of the model search. We proposed two model search apertures for our baseline in particular: \emph{curves} and \emph{immunity}.
+An orthogonal search parameter is the aperture, specifying the editable parts of the model code, and thereby restricting the scope of the model search. We proposed two model search apertures: \emph{curves} and \emph{immunity}.
 
-The \emph{Curves} aperture specifies the wider aperture where the search spans sub-models which are conditioned on EIR, treatment fractions, and demographics to generate prevalence and incidence for each age group - equilibrium prevalence/incidence vs age is the curve here, not the traditional prevalence/incidence vs time trajectories in dynamical models. The study effects and the observational model remain out of scope, this is to make model propositions comparable and to mitigate search hacking - where the proposer edits the model likelihood without changes to the mechanism to produce a more likely model (examples have been cited in \citep{Karwowski2026Aug}).
+The \emph{Curves} aperture is the wider of the two which spans models conditioned on EIR, treatment fractions, and demographics to generate prevalence and incidence for each age group. Equilibrium prevalence/incidence vs age is the ``curve'' in question, not the more commonly referred to prevalence/incidence vs time curves in dynamical models. The study effects and the observational model remain out of scope, this is to make model propositions comparable and to mitigate search hacking - where the proposer edits the model likelihood without changes to the mechanism to produce a more likely model (examples have been cited in \citep{Karwowski2026Aug}).
 
-The \emph{Immunity} aperture specifies a narrower search where sub-models are conditioned on Force of Infection (by age) and generate probabilities for pre-erythrocytic infection, clinical infection and detection by microscopy. This leaves the incumbent's formulation of heterogeneity, and equilibrium prevalence and incidence from infection probabilities untouched.
+The \emph{Immunity} aperture specifies a narrower search which spans models conditioned on Force of Infection (by age) and generate probabilities for pre-erythrocytic infection, clinical infection and detection by microscopy. This leaves the incumbent's formulation of heterogeneity, and equilibrium prevalence and incidence from infection probabilities untouched.
 
-We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 agents drawn from Qwen3.5-122B-A10B-FP8 at temperature 1.0, with max\_tokens=32768, thinking\_tokens=2048 and a budget of 50 tool calls per agent, resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit.
+We performed a sweep to search over all combinations of starting point and search aperture (n=4). Each search consisted of 8 proposals drawn from Qwen3.5-122B-A10B-FP8 at temperature 1.0, with max\_tokens=32768, thinking\_tokens=2048 and a budget of 50 tool calls per agent, resulting in 32 + 4 models - 4 incumbents and 32 proposals. Of the 32 proposals, 13 compiled and fit.
 
-% TODO: No longer true
-We found that a small minority of proposals produced simpler, more identifiable models, which were cheaper to fit, and with no significant degredation in predictive performance (incumbent immunity candidate 5, and incumbent curves candidate 8). Most proposals produced significantly worse predictions. Proposals which were started from scratch were the simplest (L-U parameters, and fit within L-U minutes), with generally worse predictive performance.
+We found that no proposals were competitive with the incumbent with respect to prediction, identifiability and simplicity. However, inc/imm exhibited similar predictive performance at the expense of identifiability and complexity. And many fast and simple but less predictive models were proposed in the scr/cur arm. See Table \ref{tab:evaluation} for the full results.
+
+\section{Frontier agent search}
+
+To investigate the gap between local agents and the frontier, we also ran searches with Anthropic's Claude and OpenAI's ChatGPT, through the claude code and codex harnesses respectively. We searched from the incumbent starting point with the curves aperture, as it was the most promising configuration in the local search experiment. We tried two different model sizes for each model provider: Haiku 4.5 and Opus 5 from Anthropic, and GPT-5.6 luna and GPT-5.6 sol from OpenAI. A major difference from the previous experiment is that we imposed a 15 minute time limit to restrict the costs for a search and make it acheivable with a base subscription, future work may wish to explore API billing to make this run comparable with the previous experiment. Each search consisted of 8 agents per model, giving 32 proposals which were fitted alongside the incumbent under the same pathfinder initialisation and the same three-study holdout as the local searches. Of the 32 proposals, 24 compiled and fit: 8 of 8 for Haiku, 4 of 8 for Opus, 4 of 8 for luna and 8 of 8 for sol. The results for this search are shown alongside the local proposals in Table~\ref{tab:evaluation}.
+
+% Sources: discovery remote/runs_agentic, built by
+%   uv run python -m examples.malaria.evaluation remote/runs_pathfinder/runs_pathfinder remote/runs_agentic --latex
+% Claude arm = runs_agentic/18-claude-haiku-opus-16-pathfinder (proposals combined from
+%   10-claude-haiku-8 and 11-claude-opus-8); codex arm = 17-codex-luna-sol-16-pathfinder
+%   (proposals combined from 03/04 = luna and 05/06 = sol).
+% 11 of the 16 codex candidates originally failed the prior-draw gate because the proposal
+%   wrapped its region in a redundant `def parameters():`, which is a harness-compatibility
+%   fault and not a modelling one. Those 11 were repaired and refitted in
+%   runs_agentic/18-codex-luna-sol-11-pathfinder-fixed; frontier.py prefers those records,
+%   matched to candidate indices by proposal filename because the refit renumbers from zero.
+%   4 luna candidates still fail: 2, 3 and 7 did not fit within 3600s and 6 raised
+%   NameError on prior draws. If the write-up should say that the codex proposals needed a
+%   repair the claude ones did not, this is the place to say it.
+
+The frontier agents improved on local agents in all respects, however none greatly improved on the incumbent's predictions. The Opus 11 proposal is the only one which is potentially preferable to the incumbent by improving identifiability while maintaining parity in other metrics.
 
 \begin{table}
 \centering
@@ -221,31 +229,11 @@ scr/cur & 2 & \worse{-35.4} & \worse{10.3} & \worse{-1065.4} & \worse{482.3} & 0
   \label{tab:evaluation}
 \end{table}
 
-\section{Frontier model search}
-
-To investigate the gap between local models and the frontier, we also ran searches with Anthropic's Claude and OpenAI's ChatGPT, through the claude code and codex harnesses respectively. We searched from the incumbent starting point with the curves aperture, as it was the most promising configuration for mechanistic model search in the local search experiment. We tried two different model sizes for each model provider: Haiku 4.5 (\texttt{claude-haiku-4-5-20251001}) and Opus 5 (\texttt{claude-opus-5}) from Anthropic, and GPT-5.6 luna (\texttt{gpt-5.6-luna}) and GPT-5.6 sol (\texttt{gpt-5.6-sol}) from OpenAI. A major difference from the previous experiment is that we imposed a 15 minute time limit to restrict the costs for a search and make it acheivable with a base subscription, future work may wish to explore API billing to make this run comparable with the previous experiment. Each search consisted of 8 agents per model, giving 32 proposals which were fitted alongside the incumbent under the same pathfinder initialisation and the same three-study holdout as the local searches. Of the 32 proposals, 24 compiled and fit: 8 of 8 for Haiku, 4 of 8 for Opus, 4 of 8 for luna and 8 of 8 for sol. The results for this search are shown alongside the local proposals in Table~\ref{tab:evaluation}.
-
-% Sources: discovery remote/runs_agentic, built by
-%   uv run python -m examples.malaria.evaluation remote/runs_pathfinder/runs_pathfinder remote/runs_agentic --latex
-% Claude arm = runs_agentic/18-claude-haiku-opus-16-pathfinder (proposals combined from
-%   10-claude-haiku-8 and 11-claude-opus-8); codex arm = 17-codex-luna-sol-16-pathfinder
-%   (proposals combined from 03/04 = luna and 05/06 = sol).
-% 11 of the 16 codex candidates originally failed the prior-draw gate because the proposal
-%   wrapped its region in a redundant `def parameters():`, which is a harness-compatibility
-%   fault and not a modelling one. Those 11 were repaired and refitted in
-%   runs_agentic/18-codex-luna-sol-11-pathfinder-fixed; frontier.py prefers those records,
-%   matched to candidate indices by proposal filename because the refit renumbers from zero.
-%   4 luna candidates still fail: 2, 3 and 7 did not fit within 3600s and 6 raised
-%   NameError on prior draws. If the write-up should say that the codex proposals needed a
-%   repair the claude ones did not, this is the place to say it.
-
-Similarly to the local model search, proposed models were only preferable in terms of simplicity, MCMC diagnostics (sol 15, sol 10 and opus 11), and speed to fit (opus 11). No proposals were significantly more predictive, the largest paired improvement was $\Delta\mathrm{elpd} = 3.2 \pm 2.7$ (haiku 3).
-
 From a cost perspective, Claude based proposals required 2.3 times as many tokens as ChatGPT-based agents ($17.6 \pm 7.4$k vs $7.5 \pm 1.9$k), and took 1.17 times as long ($3.45 \pm 1.06$ vs $2.96 \pm 0.81$ minutes). Neither of the agents came close to using their 15 minute limit. Haiku agents made twice as many tool calls as any other model ($20.1 \pm 7.6$, against $10.4 \pm 3.0$ for luna, $10.8 \pm 3.2$ for sol and $11.0 \pm 1.4$ for the Opus agents that ran to completion), and generated nearly three times the output tokens of either codex model ($21.6 \pm 8.2$k vs $7.5$k). At list prices, the 16 Claude agents cost \$8.06 in total ($\$0.50 \pm 0.32$ per agent), no costs were recorded for ChatGPT agents.
 
 \section{Model landscape}
 
-Across all proposals used Claude Opus 5 to find structural motifs to help describe the qualitative approaches taken by the agents. The most common approach (M1) was to consolidate the three immunity functions (pre-erythrocytic, clinical and detection immunity), which generally improved ESS, fit time and identifiability compared to approaches which did not, see Table \ref{tab:motif_sensitivity} for a sensitivity analysis of the motifs. However, the proposal spaces were very diverse, with all but one search (scr/imm) producing proposals with $\geq 5$ unique motif sets (out of 8 proposals). A detailed breakdown of motif attribution is shown in Table \ref{tab:motifs}. We describe each motif below:
+We used Claude Opus 5 to find structural motifs to help describe the qualitative approaches across all searches. The most common approach (M1) was to consolidate the three immunity functions (pre-erythrocytic, clinical and detection immunity), which generally improved ESS, fit time and identifiability compared to approaches which did not, see Table \ref{tab:motif_sensitivity} for a sensitivity analysis of the motifs. However, the proposal spaces were very diverse, with all but one search (scr/imm) producing proposals with $\geq 5$ unique motif sets (out of 8 proposals). A detailed breakdown of motif attribution is shown in Table \ref{tab:motifs}. We describe each motif below:
 
 \paragraph{M1. Immunity consolidation:} collapse IB/IC/ID into one or two shared immunity levels, or share their decay and shape constants.
 
@@ -299,32 +287,34 @@ for free parameters $\tau_0, \kappa, \varepsilon_c, p_{\max}, \varepsilon_p, a_p
 
 \section{Discussion}
 
-We have presented an evaluation harness and baseline for malaria transmission model search. This step allows researchers to quantitatively explore the modelling space with respect to model likelihood (through ELPD) and computational requirements for fitting (through MCMC statistics).
-
-The current search results suggest that there is potential to simplify the incumbent model and improve fitting, without impacting predictive performance. It remains to be seen if preditive accuracy can be improved.
+We have presented an evaluation harness and baseline for malaria transmission model search. This step allows researchers to apply search algorithms and quantitatively explore the modelling space. The current search results suggest that there is potential to simplify the incumbent model and improve identifiability, without impacting predictive performance. It remains to be seen if preditive accuracy can be improved.
 
 There is a big performance gap between the open weight models (and custom harness) used in this study and the frontier models (with frontier coding harnesses). Of the open weight model proposals, less than half compiled and fit (compared to $\frac{3}{4}$ frontier proposals).
 
-These early results also suggest that human judgement is still required to discern which models to deploy, many proposals make structural changes to the model which result in no significant change in predictive performance. In the absence of more data to discern true mechanisms, humans must validate that the proposed mechanisms are at least consistent with our best understanding of malaria transmission.
+These early results also suggest that human judgement is still required to discern which models to deploy, many proposals are similar on all metrics while making structural changes to the model. In the absence of more data to separate the true mechanisms, humans must validate that the proposed mechanisms are at least consistent with our best understanding of malaria transmission.
 
 \subsection{Future work}
 
-We should investigate providing MCMC traces to the agents. This data was witheld and agents were steered away from running MCMC fits to make the best use of limited compute/tokens and to avoid reward hacking behaviours. However, the trace for the incumbent fit could provide more direct signals on how to remediate misspesification. 
+We should investigate the effects of providing MCMC traces to the agents. This data was witheld and agents were steered away from running MCMC fits to make the best use of limited compute/tokens and to avoid reward hacking behaviours. However, the trace of the incumbent fit could provide more direct signals on how to remediate mis-spesification. 
 
-LLM-based methods are sensitive to prompt optimisation, which has been unexplored in this study. The prompt is long, as it provides context about the nuanced malaria model fitting problem, the resources available for analysis, the evaluation process and praticalities about proposal submission. It assumes little knowledge of domain specific techniques or issues the agents may consider or encounter (outside of the incumbent model code), and does not prescribe probabilistic modelling workflows to consider (outside of numpyro). For malaria modelling in particular, there is potential to incorporate the insights from this paper into the prompt to accelerate the search. However, in the interest of a more general model search method, we would recommend optimising prompts by reducing the size and increasing its clarity.
+LLM-based methods are sensitive to prompt optimisation, which has been unexplored in this study. The prompt is long, as it provides context about the nuanced malaria model fitting problem, the resources available for analysis, the evaluation process and praticalities about proposal submission. In line with recent LLM prompting practices, we would recommend optimising prompts by reducing the size and increasing their clarity.
 
-The effect of the agent harness and underlying model has not yet been disentangled. Discovery, the custom harness developed for the open weight models, is a rudimentary prototype and does not compare with Claude Code or Codex in terms of functionality. One should investigate a fully featured harness which supports any model, such as OpenCode \citep{OpenCode}, to put them on a level playing field and remove any barriers introduced by a poorly defined interface.
+The effect of the agent harness and underlying model has not yet been disentangled. Discovery, the custom harness developed for the open weight models, is a rudimentary prototype and should not be compared with Claude Code or Codex. One should investigate a fully featured harness which supports any model, such as OpenCode \citep{OpenCode}, to put all models on a level playing field and remove any barriers introduced by a hastily conceived tool calling interface.
 
-A careful scale up of resources alongside search improvements could lead to progress on the predictive performance. The open weight model (Qwen3.5-122B-A10B-FP8) was run on a single HPC node with four L40s. There have since been many releases of more performant and larger models which could be executed with a multi-node set up. The frontier models were restricted to 15 minutes, and inference time scaling is known to greatly improve response quality and has been extended to the order of days. However, most of the proposals in this study exhibited worse predictive performance than the incumbent, and therefore care is needed to avoid wasting computationally expensive MCMC fits on unlikely trajectories.
+A careful scale up of resources alongside search improvements could lead to progress on the predictive performance. The open weight model (Qwen3.5-122B-A10B-FP8) was run on a single HPC node with four L40s. There have since been many releases of more performant and larger models which could be executed with a multi-node set up. The frontier models were restricted to 15 minutes, and inference time scaling is known to greatly improve response quality and has been extended to the order of days. However, most of the proposals in this study exhibited worse predictive performance than the incumbent, and therefore care is needed to avoid wasting computationally expensive LLM decoding and MCMC fits on unlikely trajectories and proposals.
 
-The underlying data used in this study is limited and should be extended. For consistency with previous fits, we omitted observations in subjects which were older than 20 years old and assumed an exponential mortality rate. Observations in older subjects would confirm or rule out mechanisms through emergent behaviours which only appear on longer time scales. More realistic demographics can be simulated from WorldPop data, and is currently supported by dmeq. Much more paired prevalence and incidence data across age groups has since been collected and standardised. With the help of agents, one can extend the evaluation data set with new points which reasonably control for interventions, seasonality and other covariates in order to reduce the variance of ELPD.
+The underlying observational data used in this study is limited and should be extended. For consistency with previous fits, we omitted observations in subjects which were older than 20 years old and assumed an exponential mortality rate. Observations in older subjects would confirm or rule out mechanisms through emergent behaviours which only appear on longer time scales. More realistic demographics can be simulated from WorldPop data, and is currently supported by dmeq. Much more paired prevalence and incidence data across age groups has since been collected and standardised by \citet{Battle2015Aug}. With the help of agents, one can extend the evaluation data set with new points which reasonably control for interventions, seasonality and other covariates in order to reduce the variance of ELPD.
 
 \section*{Attribution and LLM use}
 
 This manuscript was written by GC and an LLM was used to insert experimental details, summarise experimental results, and fix references and citations. Dmeq was written by GC with later refactors made by an LLM and reviewed by GC. Msinf was written by an LLM and reviewed by GC. Discovery was written by an LLM directed by GC and is still unreviewed, please treat as a prototype. PW and TC advised on the direction and reviewed the results. I am very thankful for their supervision.
 
+\newpage
+
 \bibliographystyle{plainnat}
 \bibliography{bib}
+
+\newpage
 
 \appendix
 
