@@ -23,10 +23,10 @@
 \subsection{Malaria transmission modelling}
 
 % The complexity, immunity, drugs, vectors
-Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multiphase lifecycle of the Plasmodium parasite and its interaction with different parts of the human immune system, varying influence of interventions, and the non-linear effects of vector carrying capacity on malaria burden.
+Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multi-phase lifecycle of the Plasmodium parasite and its multiple interactions the human immune system and the non-linear effects of Force of Infection on malaria burden at different ages.
 
 % The data: prevalence, incidence, EIR
-Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data:
+Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data From \citet{thesis}, `` 
 
 % TODO: Sanitise from thesis
 \begin{description}
@@ -36,6 +36,7 @@ Moreover, the available data is generally high variance and sparse, due to low s
     \item[Entomological Inoculation Rate]
     EIR estimates the average number of infectious mosquito bites received by a person per year. This rate is subject to considerable variability, influenced by the methods used for mosquito capture and the estimation of the sporozoite rate, as not all mosquito bites result in transmission. The EIR's variability is further compounded by environmental heterogeneity and seasonal factors, such as rainfall and temperature, which affect mosquito breeding and survival rates.
 \end{description}
+''
 
 All of these metrics are heavily influenced by the vectorial capacity, the rate of contact between infectious mosquitoes and susceptible humans. However, a myriad of confounding factors, such as demographics, seasonality, human habitats, land use, diagnostic methods and wider malaria controls can obscure their precise relationship. Understanding these relationships are essential for predicting and mitigating malaria burden, and so have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
 
@@ -61,13 +62,18 @@ No LLM driven program search has been applied to malaria transmission modelling 
 
 \section{Methods}
 
-% MCMC (RWMH, SA, NUTS)
+\subsection{Model fitting and evaluation}
 
-% Evaluation and diagnostics (our own)
-% - MCMC metrics
-% - Predictive metrics In distribution / OOD (leave-one-study-out, by refitting)
+We used numpyro \citep{numpyro} for fitting, as it provides a wide array of MCMC kernels and integrates tightly with JAX's GPU acceleration and auto-differentiation functionality. As a gradient-free kernel, we used the Sample Adaptive (SA) kernel \citep{Zhu2019}. SA was parameterised with 1,000/1,000 warmup/posterior samples. As a gradient based kernel we used the No-U-Turn-Sampler (NUTS) \citep{nuts}. NUTS was parameterised with 100/100 warmup/posterior samples.
 
-% LLM, Agents, Search harnesses (Analysis bench, brief)
+%Pathfinder
+We explored three intiaialisation methods on the baseline and then used the best and most general for model search. Median initialisation sets the first samples to the prior median value. Griffin initialisation sets the first samples to the median estimate published in \citet{griffin}, since EIR estimates were unpublished they are set to the prior median value. Pathfinder initialisation \citep{Zhang2022}, estimates well behaved initial samples by applying a variational inference optimisation for a Normal approximation. We parameterised Pathfinder to independently optimise initialisations for each chain.
+
+MCMC traces were then evaluated on a range of common metrics for prediction quality and convergence. To assess model likelihood for model selection, we computed the Expected Log Probability Density using Leave One Study Out (ELPD-LOSO) on a training and held out set. The observations are partitioned by randomly selecting three studies to hold out. The ``training'' set was made available to agents to analyse before making their proposals, while the held out set was kept hidden. To assess the identifiability of a parameter, we compute the KL divergence of the posterior estimate from the prior. A low divergence, or little update, suggests that the parameter is unidentifiable. Beyond model likelihood and identifiability, we also evaluated posterior coverage, $\hat{r}$, Effective Sample Size (ESS), and time to fit in minutes.
+
+\subsection{Model search}
+
+To orchestrate the model search, we built Discovery. Discovery collects the search context, including a brief, the starting point and search objective into a prompt for the agent. It also, constructs an isolated temporary directory with observational and supporting data for the agent to analyse through a tool calling interface. To interface with the underlying model, Discovery supports either an OpenAI compatible URL, or execution of a headless coding harness (Claude Code or Codex) in a subprocess. For the open weight experiments, we launched a vLLM server with Qwen 3.6 112B (is that right?) \citep{qwen}. For the frontier experiments we launched Claude Code and Codex with Pro subscriptions. After the agents have made their proposals, Discovery extracts, filters and evaluates them. To save computation, we filter proposals by (...). The remaining proposals are then fit using NUTS with Pathfinder initialisation and evaluated using the same metrics outlined above.
 
 \section{Analysis of the baseline model fit}
 
@@ -298,6 +304,10 @@ A careful scale up of resources alongside search improvements could lead to prog
 
 The underlying data used in this study is limited and should be extended. For consistency with previous fits, we omitted observations in subjects which were older than 20 years old and assumed an exponential mortality rate. Observations in older subjects would confirm or rule out mechanisms through emergent behaviours which only appear on longer time scales. More realistic demographics can be simulated from WorldPop data, and is currently supported by dmeq. Much more paired prevalence and incidence data across age groups has since been collected and standardised. With the help of agents, one can extend the evaluation data set with new points which reasonably control for interventions, seasonality and other covariates in order to reduce the variance of ELPD.
 
+\section*{Attribution and LLM use}
+
+This manuscript was written by GC and an LLM was used to insert experimental details, summarise experimental results, and fix references and citations. Dmeq was written by GC with later refactors made by an LLM and reviewed by GC. Msinf was written by an LLM and reviewed by GC. Discovery was written by an LLM directed by GC and is still unreviewed, please treat as a prototype. PW and TC advised on the direction and reviewed the results. I am very thankful for their supervision.
+
 \bibliographystyle{plainnat}
 \bibliography{bib}
 
@@ -420,8 +430,6 @@ M11 decay & 4 & 44 & 74 & 37.4 & 30.9 & -929.7 & -798.1 & -200.0 & -190.3 & 6.5 
   \caption{Sensitivity of sampling and predictive diagnostics to structural motifs, over the 37 proposals that compiled and fit: 24 from the frontier searches and 13 from the local searches. Each cell is the median over the proposals that carry the motif and over those that do not; the incumbent and the two scratch seeds are not proposals and are excluded, and the incumbent is shown as a baseline rather than as a row. Proposals carry 2.1 motifs on average and no motif is randomised against the others, so these are contrasts and not estimated effects. In particular, six of the nine M9 proposals and six of the seven M10 proposals come from the scratch/curves search, so those rows largely contrast that search with the rest. Fitting time is right-censored at the 3600\,s fit timeout, with sixteen of the thirty-seven proposals between 44 and 58 minutes, and ESS$_{\mathrm{tail}}$ is not a reliable summary for the fifteen proposals whose chains did not mix ($\hat{R} > 1.1$; eleven frontier, four local), for which unid.\ is the better read. Across all thirty-seven proposals the rank correlation between $\mathrm{elpd}_{\mathrm{train}}$ and $\mathrm{elpd}$ is 0.60, between $\mathrm{elpd}_{\mathrm{train}}$ and the parameter count 0.65, and between $\mathrm{elpd}_{\mathrm{train}}$ and ESS$_{\mathrm{tail}}$ $-0.48$.}
   \label{tab:motif_sensitivity}
 \end{table}
-
-
 
 \end{document}
 
