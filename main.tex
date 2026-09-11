@@ -282,19 +282,21 @@ We have presented an evaluation harness and baseline for malaria transmission mo
 
 The current search results suggest that there is potential to simplify the incumbent model and improve fitting, without impacting predictive performance. It remains to be seen if preditive accuracy can be improved.
 
-There is a big performance gap between the open source models (and custom harness) used in this study and the frontier models (with frontier coding harnesses). Of the open source model proposals, less than half compiled and fit (compared to $\frac{3}{4}$ frontier proposals).
+There is a big performance gap between the open weight models (and custom harness) used in this study and the frontier models (with frontier coding harnesses). Of the open weight model proposals, less than half compiled and fit (compared to $\frac{3}{4}$ frontier proposals).
 
 These early results also suggest that human judgement is still required to discern which models to deploy, many proposals make structural changes to the model which result in no significant change in predictive performance. In the absence of more data to discern true mechanisms, humans must validate that the proposed mechanisms are at least consistent with our best understanding of malaria transmission.
 
 \subsection{Future work}
 
-% Reorient the search (start with the encumbent fits, direct towards examples of misspecification, more comparable search - opencode, use more elaborate search techniques).
+We should investigate providing MCMC traces to the agents. This data was witheld and agents were steered away from running MCMC fits to make the best use of limited compute/tokens and to avoid reward hacking behaviours. However, the trace for the incumbent fit could provide more direct signals on how to remediate misspesification. 
 
-% Lift compute constraints (larger open models, more time with frontier models, more tool calls, subagents).
+LLM-based methods are sensitive to prompt optimisation, which has been unexplored in this study. The prompt is long, as it provides context about the nuanced malaria model fitting problem, the resources available for analysis, the evaluation process and praticalities about proposal submission. It assumes little knowledge of domain specific techniques or issues the agents may consider or encounter (outside of the incumbent model code), and does not prescribe probabilistic modelling workflows to consider (outside of numpyro). For malaria modelling in particular, there is potential to incorporate the insights from this paper into the prompt to accelerate the search. However, in the interest of a more general model search method, we would recommend optimising prompts by reducing the size and increasing its clarity.
 
-% More data (higher ages, realistic demographics, information extraction)
+The effect of the agent harness and underlying model has not yet been disentangled. Discovery, the custom harness developed for the open weight models, is a rudimentary prototype and does not compare with Claude Code or Codex in terms of functionality. One should investigate a fully featured harness which supports any model, such as OpenCode \citep{OpenCode}, to put them on a level playing field and remove any barriers introduced by a poorly defined interface.
 
-% Other models
+A careful scale up of resources alongside search improvements could lead to progress on the predictive performance. The open weight model (Qwen 3.6) was run on a single HPC node with four L40s. There have since been many releases of more performant and larger models which could be executed with a multi-node set up. The frontier models were restricted to 15 minutes, and inference time scaling is known to greatly improve response quality and has been extended to the order of days. However, most of the proposals in this study exhibited worse predictive performance than the incumbent, and therefore care is needed to avoid wasting computationally expensive MCMC fits on unlikely trajectories.
+
+The underlying data used in this study is limited and should be extended. For consistency with previous fits, we omitted observations in subjects which were older than 20 years old and assumed an exponential mortality rate. Observations in older subjects would confirm or rule out mechanisms through emergent behaviours which only appear on longer time scales. More realistic demographics can be simulated from WorldPop data, and is currently supported by dmeq. Much more paired prevalence and incidence data across age groups has since been collected and standardised. With the help of agents, one can extend the evaluation data set with new points which reasonably control for interventions, seasonality and other covariates in order to reduce the variance of ELPD.
 
 \bibliographystyle{plainnat}
 \bibliography{bib}
