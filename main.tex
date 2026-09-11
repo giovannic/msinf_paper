@@ -92,18 +92,18 @@ Proposals declaring more than 200 parameters are also rejected, and fits which d
 
 \section{Analysis of the baseline model fit}
 
-Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin_estimates_2014}. We found that the NUTS sampler produced more reliable estimates and slightly alter the previous posterior. The remaining gaps in predictive performance appear to be a result of misspecification rather than missampling.
+Here we present our findings in re-creating the malaria transmission model fits originally published in \citep{griffin_estimates_2014}. We found that the NUTS sampler produced more reliable estimates and alters the previous posterior. The remaining gaps in predictive performance appear to be a result of misspecification rather than missampling.
 
-\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced posteriors consistent with \citet{griffin_estimates_2014} with poor convergence diagnostics (worst-case $\hat{r}$=1.43, minimum bulk ESS=8), however the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics (worst-case $\hat{r}$=1.04, minimum bulk ESS=99) - see Appendix \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}. The NUTS chains also reached a higher log posterior density (... vs ...), indicating that the SA sample had not settled in the dominant posterior mode.
+\paragraph{MCMC convergence.} The Sample Adaptive (SA) sampler produced pre-erythrocytic and clinical immunity curves consistent with \citet{griffin_estimates_2014} but a lower and more uncertain probability of detection at high exposure (median 0.84 vs.\ 0.96 at 99 exposures), with poor convergence diagnostics (worst-case $\hat{r}$=1.43, minimum bulk ESS=8); however, the No U-Turn Sampler (NUTS) produced a different posterior with preferable convergence diagnostics (worst-case $\hat{r}$=1.04, minimum bulk ESS=99) - see Appendix \ref{mcmc} for full convergence diagnostics. The NUTS posteriors implied a lower probability of pre-erythrocytic infection and a sharper drop in clinical infection probability with exposure, as illustrated in Figure \ref{immunity}.
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth]{immunity.png}
-  \caption{Immunity probability functions over exposure count, with sampled trajectories and median overlays for the prior, the NUTS posterior, and the \citet{griffin_estimates_2014} reference posterior.}
+  \includegraphics[width=\textwidth]{immunity_A_bands_row.png}
+  \caption{Immunity probability functions over exposure count: medians (solid lines) and 90\% intervals (shaded) for the SA posterior, the NUTS posterior and the \citet{griffin_estimates_2014} reference posterior, with the prior median and 90\% interval in dashed grey.}
   \label{immunity}
 \end{figure}
 
-\paragraph{Posterior predictive.} The NUTS posterior exhibited worse predictive performance than SA, expected log pointwise predictive density (ELPD) ... < ..., despite better convergence statistics. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
+\paragraph{Posterior predictive.} The NUTS posterior also fit the data better than SA (paired in-sample ELPD difference $36.3 \pm 14.0$ in favour of NUTS; incidence $26.1 \pm 13.2$, prevalence $10.1 \pm 4.6$), so the shift away from the \citet{griffin_estimates_2014} estimates is not bought at the cost of fit. This suggests model mis-specification. The mis-match in predictions are most apparent in Figure \ref{predictive}, especially in incidence of Ndiop, Senegal and Ubiri, Tanzania. A similar, but less exaggerated, mismatch can be seen in the original posterior predictive, see Figure \ref{griffin_predictive}.
 
 \begin{figure}
   \centering
