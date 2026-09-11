@@ -9,6 +9,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
+\usepackage{tcolorbox}
+\newtcolorbox{thesisquote}{colback=gray!5, colframe=gray!60, boxrule=0pt, leftrule=3pt, arc=0pt, left=8pt, right=8pt, top=6pt, bottom=6pt, fontupper=\small}
 \newcommand{\better}[1]{\textcolor{green!50!black}{#1}}
 \newcommand{\worse}[1]{\textcolor{red!75!black}{#1}}
 \graphicspath{{figures/}}
@@ -26,9 +28,9 @@
 Malaria transmission is a complex and challenging process to model. Part of its complexity comes from the multi-phase lifecycle of the Plasmodium parasite and its multiple interactions the human immune system and the non-linear effects of Force of Infection on malaria burden at different ages.
 
 % The data: prevalence, incidence, EIR
-Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data From \citet{thesis}, `` 
+Moreover, the available data is generally high variance and sparse, due to low study sizes and irregular collection intervals. Three measures of malaria burden are commonly used as observational data. From \citet{thesis}:
 
-% TODO: Sanitise from thesis
+\begin{thesisquote}
 \begin{description}
     \item[Clinical Malaria Incidence] This is the number of clinical malaria episodes within a specific time frame. An episode is typically defined as a new patient with a fever coupled with a positive diagnostic test. Incidence can be determined through active or passive case detection methods. Active case detection involves routinely monitoring a pre-enrolled cohort over the time frame, allowing for an accurate representation of malaria incidence by capturing cases as they occur. In contrast, passive case detection uses existing healthcare systems to identify incoming patients and their contact networks, which, although practical, is known to underestimate the true incidence of malaria due to reliance on symptomatic individuals seeking treatment \citet{rios-zertuche_performance_2021}.
     \item[Parasite Prevalence]
@@ -36,7 +38,7 @@ Moreover, the available data is generally high variance and sparse, due to low s
     \item[Entomological Inoculation Rate]
     EIR estimates the average number of infectious mosquito bites received by a person per year. This rate is subject to considerable variability, influenced by the methods used for mosquito capture and the estimation of the sporozoite rate, as not all mosquito bites result in transmission. The EIR's variability is further compounded by environmental heterogeneity and seasonal factors, such as rainfall and temperature, which affect mosquito breeding and survival rates.
 \end{description}
-''
+\end{thesisquote}
 
 All of these metrics are heavily influenced by the vectorial capacity, the rate of contact between infectious mosquitoes and susceptible humans. However, a myriad of confounding factors, such as demographics, seasonality, human habitats, land use, diagnostic methods and wider malaria controls can obscure their precise relationship. Understanding these relationships are essential for predicting and mitigating malaria burden, and so have been the subject of considerable research \citet{griffin_estimates_2014,griffin_is_2016,cameron_defining_2015,reiker_emulator-based_2021}. Of these efforts, we use the transmission model proposed by \citet{griffin_estimates_2014} as a baseline. Which we describe below:
 
@@ -312,6 +314,8 @@ This manuscript was written by GC and an LLM was used to insert experimental det
 \bibliography{bib}
 
 \appendix
+
+\input{equilibrium}
 
 \section{MCMC convergence diagnostics}
 \label{mcmc}

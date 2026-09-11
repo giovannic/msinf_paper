@@ -1,0 +1,218 @@
+\section{Equilibrium solution and hierarchical model}
+\label{section:equilibrium}
+
+This appendix documents the deterministic equilibrium solution of the \citet{griffin_estimates_2014} transmission model, as implemented in dmeq \citep{Charles2024}, and the hierarchical observation model it is embedded in for fitting \citep{Charles2026Msinf}. Notation follows the supplementary information of \citet{griffin_estimates_2014} where possible.
+
+\subsection{Deterministic equilibrium solution}
+
+\paragraph{Demography.} The population is divided into age classes $i = 1, \dots, n$ with midpoints $a_i$, lower edges $t_{i-1}$ and widths $\Delta a_i$; all ages and rates in the solver are in days. The ageing rate out of class $i$ and the total rate of leaving it are
+\begin{equation*}
+r(a_i) = \begin{cases}
+1/\Delta a_i, & i < n, \\
+0, & i = n,
+\end{cases}
+\qquad
+r_e(a_i) = r(a_i) + \eta(a_i),
+\end{equation*}
+where $\eta(a)$ is the per-day death rate, either constant (exponential age distribution) or age-specific (e.g.\ derived from WorldPop mortality). The stable age distribution is computed recursively and normalised to sum to one,
+\begin{equation*}
+\pi(a_1) \propto \frac{1}{r(a_1) + \eta(a_1)},
+\qquad
+\pi(a_i) \propto \frac{r(a_{i-1})\,\pi(a_{i-1})}{r(a_i) + \eta(a_i)}.
+\end{equation*}
+
+\paragraph{Exposure.} The relative biting rate by age is
+\begin{equation*}
+\psi(a) = 1 - \rho \exp\!\left(-\frac{a}{a_0}\right).
+\end{equation*}
+Heterogeneity in exposure is log-normal with variance $s^2$ and is integrated by Gauss--Hermite quadrature with nodes $z_h$ and weights $\omega_h$, $\sum_h \omega_h = 1$, giving relative biting rates
+\begin{equation*}
+\zeta_h = \exp\!\left(-\frac{s^2}{2} + s\,z_h\right).
+\end{equation*}
+For each heterogeneity node the per-day entomological inoculation rate experienced at age $a$ is
+\begin{equation*}
+\varepsilon_h(a) = \frac{\mathrm{EIR}}{365}\,\zeta_h\,\psi(a).
+\end{equation*}
+Everything below is computed separately for each node $h$, and the subscript $h$ is dropped.
+
+\subsubsection{Immunity}
+
+Each immunity level $I_x$ is boosted at rate $\lambda_x$, with boosting suppressed for a period $u_x$ after each boost, and decays with mean duration $d_x$. At equilibrium this gives the recursion over age classes
+\begin{gather*}
+I_x(a_1) = \frac{\lambda_x(a_1)/\big(1 + u_x \lambda_x(a_1)\big)}{1/d_x + r_e(a_1)}, \\
+I_x(a_i) = \frac{\lambda_x(a_i)/\big(1 + u_x \lambda_x(a_i)\big) + r_e(a_i)\, I_x(a_{i-1})}{1/d_x + r_e(a_i)}.
+\end{gather*}
+It is applied to three immunity types:
+\begin{itemize}
+  \item pre-erythrocytic immunity $I_B$, boosted by infectious bites: $\lambda_B = \varepsilon$, with $(u_x, d_x) = (u_b, d_b)$;
+  \item acquired clinical immunity $I_C$, boosted by infections: $\lambda_C = \Lambda$, with $(u_x, d_x) = (u_c, d_c)$;
+  \item immunity to detection $I_D$, boosted by infections: $\lambda_D = \Lambda$, with $(u_x, d_x) = (u_d, d_d)$.
+\end{itemize}
+
+\paragraph{Force of infection.} Pre-erythrocytic immunity reduces the probability that an infectious bite results in infection,
+\begin{equation*}
+b(a) = b_0\left[b_1 + \frac{1 - b_1}{1 + \big(I_B(a)/I_{B0}\big)^{k_b}}\right],
+\qquad
+\Lambda(a) = b(a)\,\varepsilon(a).
+\end{equation*}
+
+\paragraph{Maternal immunity.} Newborns inherit a proportion $P_M$ of the acquired clinical immunity of a 20-year-old, $I_C(a_{20})$, where $a_{20}$ is the age class whose midpoint is closest to 20 years. Maternal immunity decays exponentially with mean duration $d_m$ and is averaged over each age class,
+\begin{equation*}
+I_{CM}(a_i) = P_M\, I_C(a_{20})\, \frac{d_m}{\Delta a_i}\left[\exp\!\left(-\frac{t_{i-1}}{d_m}\right) - \exp\!\left(-\frac{t_i}{d_m}\right)\right],
+\end{equation*}
+with $I_{CM} = 0$ in the terminal class.
+
+\paragraph{Clinical disease.} The probability that an infection is clinical is
+\begin{equation*}
+\phi(a) = \phi_0\left[\phi_1 + \frac{1 - \phi_1}{1 + \big((I_C(a) + I_{CM}(a))/I_{C0}\big)^{k_c}}\right].
+\end{equation*}
+
+\paragraph{Detection.} The probability that an asymptomatic infection is detected by microscopy is
+\begin{equation*}
+q(a) = d_1 + \frac{1 - d_1}{1 + \big(I_D(a)/I_{D0}\big)^{k_d} f_D(a)},
+\qquad
+f_D(a) = 1 - \frac{1 - f_{D0}}{1 + (a/a_{D0})^{\gamma_D}}.
+\end{equation*}
+
+\subsubsection{Equilibrium states}
+
+Humans are in one of six states: treated clinical disease $T$, untreated clinical disease $D$, prophylaxis $P$, asymptomatic patent infection $A$, subpatent infection $U$ and susceptible $S$. A fraction $f_t$ of clinical cases is treated, and $r_T, r_D, r_P, r_A, r_U$ are the rates of leaving each state. States are expressed as fractions of the whole population, so they sum to $\pi(a)$ in each age class. With all quantities evaluated at $a_i$, define
+\begin{gather*}
+\beta_T = r_T + r_e, \quad
+\beta_D = r_D + r_e, \quad
+\beta_P = r_P + r_e, \\
+\beta_A = \phi\Lambda + r_A + r_e, \quad
+\beta_U = \Lambda + r_U + r_e, \\
+a_T = \frac{f_t\,\phi\Lambda}{\beta_T}, \qquad
+a_D = \frac{(1 - f_t)\,\phi\Lambda}{\beta_D}, \qquad
+a_P = \frac{r_T\, a_T}{\beta_P}.
+\end{gather*}
+Inflow by ageing from the previous class enters through
+\begin{gather*}
+b_T = \frac{r(a_{i-1})\,T(a_{i-1})}{\beta_T}, \qquad
+b_D = \frac{r(a_{i-1})\,D(a_{i-1})}{\beta_D}, \\
+b_P = r_T\, b_T + \frac{r(a_{i-1})\,P(a_{i-1})}{\beta_P}, \\
+A^{\mathrm{in}} = r(a_{i-1})\,A(a_{i-1}), \qquad
+U^{\mathrm{in}} = r(a_{i-1})\,U(a_{i-1}),
+\end{gather*}
+all of which are zero in the first class. Writing $Y = S + A + U$ for the population that is neither diseased nor on prophylaxis, the states are solved class by class as
+\begin{gather*}
+Y = \frac{\pi - (b_T + b_D + b_P)}{1 + a_T + a_D + a_P}, \\
+T = a_T Y + b_T, \qquad
+D = a_D Y + b_D, \qquad
+P = a_P Y + b_P, \\
+A = \frac{A^{\mathrm{in}} + (1 - \phi)\,Y\Lambda + r_D D}{\beta_A + (1 - \phi)\Lambda}, \\
+U = \frac{U^{\mathrm{in}} + r_A A}{\beta_U}, \qquad
+S = Y - A - U.
+\end{gather*}
+
+\paragraph{Outputs.} Prevalence by microscopy and by PCR, and clinical incidence per day, are
+\begin{gather*}
+\mathrm{Prev}_{\mathrm{mic}}(a) = T + D + q A, \qquad
+\mathrm{Prev}_{\mathrm{PCR}}(a) = T + D + q^{\alpha_A} A + q^{\alpha_U} U, \\
+\mathrm{Inc}(a) = (S + A + U)\,\phi\Lambda,
+\end{gather*}
+where $\alpha_A$ and $\alpha_U$ relate detectability by PCR to detectability by microscopy. Like the states, these are fractions of the whole population. The curves reported for a site are averages over heterogeneity nodes, $\sum_h \omega_h (\cdot)_h$.
+
+\subsection{Hierarchical model}
+
+The observations are indexed by study $\ell = 1, \dots, L$, site $j = 1, \dots, J$ (each site belonging to one study $\ell(j)$), age group $k = 1, \dots, K$ and observation $i$ within each data stream.
+
+\subsubsection{Priors}
+
+Each site has a log-normal prior on its annual EIR, and each study a Beta prior on its treated fraction,
+\begin{equation*}
+\log \mathrm{EIR}_j \sim \mathcal{N}\big(\widehat{\log \mathrm{EIR}}_j,\ \sigma_{\mathrm{EIR},j}^2\big),
+\qquad
+f_{t,\ell} \sim \mathrm{Beta}\big(\alpha^{(f_t)}_\ell,\ \beta^{(f_t)}_\ell\big),
+\end{equation*}
+with $f_{t,j} = f_{t,\ell(j)}$. The eighteen core parameters $\vartheta = (\vartheta_B, \vartheta_C, \vartheta_D)$ are grouped by the immunity process they govern,
+\begin{align*}
+\vartheta_B &= (b_0,\ I_{B0},\ k_b,\ u_b) && \text{infection}, \\
+\vartheta_C &= (\phi_0,\ \phi_1,\ I_{C0},\ k_c,\ u_c,\ P_M,\ d_m) && \text{clinical disease}, \\
+\vartheta_D &= (d_1,\ I_{D0},\ k_d,\ u_d,\ a_{D0},\ f_{D0},\ \gamma_D) && \text{detection},
+\end{align*}
+and are given independent Beta or log-normal priors; any core parameter that is not estimated is fixed at its reference posterior mean. All remaining parameters of the equilibrium solution are fixed at the values of \citet{griffin_estimates_2014}.
+
+\subsubsection{Random effects}
+
+Incidence has a multiplicative study effect $\nu_\ell$ and a multiplicative site--age effect $v_{jk}$, both with mean one,
+\begin{gather*}
+\nu_\ell \sim \mathrm{LogNormal}\!\left(-\frac{\sigma_c^2}{2},\ \sigma_c\right),
+\qquad
+\sigma_c \sim \mathrm{HalfNormal}(0.5), \\
+v_{jk} \sim \mathrm{Gamma}\!\left(\frac{1}{\alpha_c},\ \frac{1}{\alpha_c}\right),
+\qquad
+\alpha_c \sim t_6(0,\ 0.25) \text{ truncated to } (0, \infty),
+\end{gather*}
+with the Gamma in shape--rate form, so that $\mathrm{E}[v_{jk}] = 1$ and $\mathrm{Var}(v_{jk}) = \alpha_c$. Prevalence has an additive study effect on the logit scale and beta-binomial overdispersion with concentration $\theta = 1/\alpha_p$,
+\begin{gather*}
+w_\ell \sim \mathcal{N}(0,\ \sigma_p^2),
+\qquad
+\sigma_p \sim \mathrm{HalfNormal}(0.5), \\
+\alpha_p \sim t_6(0,\ 0.25) \text{ truncated to } (0, \infty).
+\end{gather*}
+\citet{griffin_estimates_2014} used the same half-$t_6$ form for $\alpha_c$ and $\alpha_p$ with scale 5. Since $\alpha$ is a variance, that prior lets $v_{jk}$ absorb the overall level of incidence and so removes the information about EIR that the level carries. We tighten the scale to $0.25 = 0.5^2$, consistent with the half-normal priors on the standard deviations $\sigma_c$ and $\sigma_p$.
+
+Following \citet{griffin_estimates_2014}, none of the random effects are sampled. The study effects $\nu_\ell$ and $w_\ell$ are integrated out with 32-node Gauss--Hermite quadrature, and $v_{jk}$ is integrated out analytically, which turns the Poisson likelihood of each site--age cell into a negative binomial.
+
+\subsubsection{Mechanistic means}
+
+For each site the equilibrium solution is evaluated at the site's EIR, treated fraction and demography,
+\begin{equation*}
+\big(\mathrm{Prev}_{\mathrm{mic},j}(a),\ \mathrm{Inc}_j(a),\ \pi_j(a)\big) = \mathrm{dmeq}\big(\mathrm{EIR}_j,\ f_{t,j},\ \eta_j,\ \vartheta\big).
+\end{equation*}
+Since the outputs are population fractions, the per-person mean over an observed age interval $[a^{(0)}_i, a^{(1)}_i)$ is
+\begin{equation*}
+\bar\mu_i = \frac{\sum_a o_i(a)\,\mu_{j(i)}(a)}{\sum_a o_i(a)\,\pi_{j(i)}(a)},
+\end{equation*}
+where $\mu$ is the relevant output curve and $o_i(a)$ is the fraction of age class $a$ covered by the interval; the open-ended terminal class has zero weight.
+
+\subsubsection{Observation models}
+
+\paragraph{Incidence.} Clinical case counts over $\tau_i$ person-years of follow-up are Poisson,
+\begin{equation*}
+y^{\mathrm{inc}}_i \sim \mathrm{Poisson}(\lambda_i),
+\qquad
+\lambda_i = 365\,\tau_i\,\kappa_i\,\nu_{\ell(i)}\,v_{j(i)k(i)}\,\bar\mu^{\mathrm{inc}}_i,
+\end{equation*}
+where the factor 365 converts incidence per day to incidence per year and $\kappa_i$ is the sensitivity of the study's case-detection method relative to daily active case detection,
+\begin{equation*}
+\kappa_i = \begin{cases}
+\kappa_W, & \text{weekly active case detection}, \\
+\kappa_P, & \text{passive case detection}, \\
+1, & \text{otherwise},
+\end{cases}
+\end{equation*}
+with $\kappa_W, \kappa_P$ given Beta priors.
+
+\paragraph{Microscopy prevalence.} The number of $n_i$ individuals testing positive by microscopy is beta-binomial,
+\begin{gather*}
+p^{\mathrm{mic}}_i = \operatorname{logit}^{-1}\!\left(\operatorname{logit}\big(\bar\mu^{\mathrm{mic}}_i\big) + w_{\ell(i)}\right), \\
+y^{\mathrm{mic}}_i \sim \mathrm{BetaBinomial}\big(n_i,\ p^{\mathrm{mic}}_i\theta,\ (1 - p^{\mathrm{mic}}_i)\theta\big).
+\end{gather*}
+PCR prevalence would enter through an identical beta-binomial on $\bar\mu^{\mathrm{PCR}}_i$, but the observation table of \citet{griffin_estimates_2014} contains no PCR observations, so only incidence and microscopy prevalence are fitted.
+
+\subsection{Correspondence with the code}
+
+Table~\ref{tab:symbols} maps the symbols above to parameter names in dmeq and msinf.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{l l @{\hspace{2em}} l l}
+\toprule
+symbol & code & symbol & code \\
+\midrule
+$\mathrm{EIR}_j$ & \texttt{EIR}, \texttt{log\_eir} & $a_{D0}, f_{D0}, \gamma_D$ & \texttt{ad0}, \texttt{fd0}, \texttt{gd} \\
+$f_{t,\ell}$ & \texttt{ft}, \texttt{ft\_study} & $P_M, d_m$ & \texttt{PM}, \texttt{dm} \\
+$\phi_0, \phi_1$ & \texttt{phi0}, \texttt{phi1} & $\alpha_A, \alpha_U$ & \texttt{aA}, \texttt{aU} \\
+$I_{B0}, I_{C0}, I_{D0}$ & \texttt{IB0}, \texttt{IC0}, \texttt{ID0} & $\kappa_W, \kappa_P$ & \texttt{rW}, \texttt{rP} \\
+$k_b, k_c, k_d$ & \texttt{kb}, \texttt{kc}, \texttt{kd} & $\log \nu_\ell$, $w_\ell$ & \texttt{u}, \texttt{w} \\
+$u_b, u_c, u_d$ & \texttt{ub}, \texttt{uc}, \texttt{ud} & $\sigma_c, \sigma_p$ & \texttt{sigma\_c}, \texttt{sigma\_p} \\
+$\eta$ & \texttt{eta} & $\alpha_c, \alpha_p$ & \texttt{alpha\_c}, \texttt{alpha\_p} \\
+\bottomrule
+\end{tabular}
+\caption{Symbols in the equilibrium solution and hierarchical model and the corresponding parameter names in the code.}
+\label{tab:symbols}
+\end{table}
